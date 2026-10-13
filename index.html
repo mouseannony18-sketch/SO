@@ -25,8 +25,8 @@
     
     <div class="form-group">
         <label for="token">Bearer Token Sesi:</label>
-        <input type="text" id="token" placeholder="Otomatis terdeteksi atau isi manual...">
-        <div id="tokenStatus" class="token-status">Mencari token dari sesi browser...</div>
+        <input type="text" id="token" placeholder="Tempel token Bearer di sini...">
+        <div id="tokenStatus" class="token-status">Silakan masukkan token sesi Anda.</div>
     </div>
 
     <div class="form-group">
@@ -50,27 +50,6 @@
 </div>
 
 <script>
-    // Otomatis mencoba mendeteksi token saat halaman dimuat
-    window.onload = function() {
-        let detectedToken = "";
-        
-        // Cek apakah token tersimpan di localStorage/sessionStorage browser portal APO
-        try {
-            detectedToken = localStorage.getItem("token") || sessionStorage.getItem("token") || localStorage.getItem("bearer_token");
-        } catch(e) {
-            console.log("Akses storage dibatasi cross-origin");
-        }
-
-        if (detectedToken) {
-            document.getElementById("token").value = detectedToken;
-            document.getElementById("tokenStatusinnerText = " + "Token berhasil dimuat otomatis dari sesi browser!");
-            document.getElementById("tokenStatus").style.color = "green";
-        } else {
-            document.getElementById("tokenStatus").innerText = "Token tidak ditemukan otomatis. Pastikan Anda sudah login atau masukkan token manual.";
-        }
-    };
-
-    // Fungsi untuk menembak API APO Alfamart sesuai struktur payload yang kita temukan
     async function cekStok() {
         const token = document.getElementById("token").value.trim();
         const barcode = document.getElementById("barcode").value.trim();
@@ -90,16 +69,18 @@
             return;
         }
 
-        // Susunan data sesuai payload yang terekam di Reqable
         const payloadData = {
             companyCode: "SAT",
             productBarcode: barcode,
-            storeCode: "M104",       // Nanti bisa disesuaikan dengan kode toko Anda
-            storeDc: "MZ01"          // Nanti bisa disesuaikan dengan DC Anda
+            storeCode: "M104",
+            storeDc: "MZ01"
         };
 
+        const targetUrl = "https://apo-apps-gateway.alfagift.id/v2/order/product/scan";
+        const proxyUrl = "https://corsproxy.io/?";
+
         try {
-            const response = await fetch("https://apo-apps-gateway.alfagift.id/v2/order/product/scan", {
+            const response = await fetch(proxyUrl + encodeURIComponent(targetUrl), {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json; charset=UTF-8",
@@ -114,7 +95,6 @@
             const data = await response.json();
 
             if (response.ok && data.code === 200 && data.payload) {
-                // Tampilkan hasil sukses
                 document.getElementById("resName").innerText = data.payload.productName;
                 document.getElementById("resPlu").innerText = data.payload.plu;
                 document.getElementById("resBarcode").innerText = data.payload.barcode;
@@ -123,7 +103,6 @@
                 
                 resultBox.style.display = "block";
                 
-                // Bersihkan kolom barcode & fokus ulang agar siap scan berikutnya
                 document.getElementById("barcode").value = "";
                 document.getElementById("barcode").focus();
             } else {
@@ -131,12 +110,11 @@
                 errorBox.style.display = "block";
             }
         } catch (error) {
-            document.getElementById("errMessage").innerText = "Terjadi kesalahan jaringan atau CORS diblokir browser. " + error;
+            document.getElementById("errMessage").innerText = "Terjadi kesalahan jaringan atau CORS: " + error;
             errorBox.style.display = "block";
         }
     }
 
-    // Shortcut: Tekan Enter pada input barcode langsung memicu tombol cek
     document.getElementById("barcode").addEventListener("keypress", function(event) {
         if (event.key === "Enter") {
             cekStok();
