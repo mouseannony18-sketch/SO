@@ -25,7 +25,7 @@
 
     <!-- KARTU LOGIN -->
     <div class="card" id="loginCard">
-        <h3>Login Sistem1</h3>
+        <h3>Login Sistem</h3>
         <label>NIK:</label>
         <input type="text" id="nik" placeholder="Masukkan NIK...">
         
@@ -40,8 +40,6 @@
     </div>
 
     <!-- KARTU UTAMA (STOCK OPNAME) -->
-    <div class="card hidden" id="appCard">
-        <!-- KARTU UTAMA (STOCK OPNAME) -->
     <div class="card hidden" id="appCard">
         <h3>Stock Opname</h3>
         <p style="font-size: 12px; color: green; text-align: center;">Status: Sesi Login Aktif</p>
@@ -78,7 +76,6 @@
             let savedToken = localStorage.getItem('apo_token');
             if (savedToken) {
                 tokenGlobal = savedToken;
-                // Langsung tampilkan menu utama Stock Opname
                 document.getElementById('loginCard').classList.add('hidden');
                 document.getElementById('appCard').classList.remove('hidden');
             }
@@ -128,10 +125,7 @@
 
                 if(response.ok && result.success) {
                     tokenGlobal = result.token;
-                    
-                    // Simpan token ke localStorage browser agar awet
                     localStorage.setItem('apo_token', tokenGlobal);
-
                     alert("Login Berhasil! Sesi disimpan.");
                     
                     document.getElementById('loginCard').classList.add('hidden');
@@ -145,7 +139,7 @@
             }
         }
 
-                        async function tambahData() {
+        async function tambahData() {
             let kode = document.getElementById('kodeBarang').value.trim();
             let qtyFisik = document.getElementById('qtyFisik').value;
 
@@ -182,7 +176,6 @@
                     let namaBarang = result.productName;
                     let stokSistem = result.systemStock;
                     
-                    // Simpan ke array data untuk export excel nanti
                     dataSO.push({ 
                         Barcode: kode, 
                         Deskripsi: namaBarang, 
@@ -190,7 +183,6 @@
                         Stok_Sistem: stokSistem 
                     });
 
-                    // Render ke tabel HTML
                     let tbody = document.querySelector('#tabelSO tbody');
                     let tr = document.createElement('tr');
                     tr.innerHTML = `
@@ -200,7 +192,6 @@
                     `;
                     tbody.appendChild(tr);
 
-                    // Reset input
                     document.getElementById('kodeBarang').value = '';
                     document.getElementById('qtyFisik').value = '';
                     document.getElementById('kodeBarang').focus();
@@ -226,15 +217,10 @@
         }
 
         function logout() {
-            // Hapus token dari memori dan localStorage
             localStorage.removeItem('apo_token');
             tokenGlobal = "";
-            
-            // Kembalikan ke tampilan login
             document.getElementById('appCard').classList.add('hidden');
             document.getElementById('loginCard').classList.remove('hidden');
-            
-            // Kosongkan form input login
             document.getElementById('nik').value = '';
             document.getElementById('pin').value = '';
             document.getElementById('otp').value = '';
