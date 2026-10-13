@@ -3,124 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini Stock Opname APO</title>
+    <title>Login & Stock Opname</title>
+    <!-- SheetJS via CDN untuk export Excel nanti -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f6f9; color: #333; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #d32f2f; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="text"] { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
-        button { background-color: #d32f2f; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 100%; }
-        button:hover { background-color: #b71c1c; }
-        .result-box { margin-top: 20px; padding: 15px; background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 4px; display: none; }
-        .error-box { margin-top: 20px; padding: 15px; background: #ffebee; border: 1px solid #ffcdd2; border-radius: 4px; display: none; color: #c62828; }
-        .token-status { font-size: 12px; margin-top: 5px; color: #666; }
+        body { font-family: sans-serif; background: #f4f4f9; padding: 20px; margin: 0; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 400px; margin: 20px auto; }
+        h3 { margin-top: 0; color: #333; text-align: center; }
+        input, button { width: 100%; padding: 10px; margin-top: 8px; margin-bottom: 12px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #007bff; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .hidden { display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; font-size: 13px; text-align: left; }
+        th { background: #f8f9fa; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Stock Opname APO</h2>
-    
-    <div class="form-group">
-        <label for="token">Bearer Token Sesi:</label>
-        <input type="text" id="token" placeholder="Tempel token Bearer di sini...">
-        <div id="tokenStatus" class="token-status">Silakan masukkan token sesi Anda.</div>
-    </div>
-
-    <div class="form-group">
-        <label for="barcode">Scan / Ketik Barcode:</label>
-        <input type="text" id="barcode" placeholder="Scan barcode produk di sini..." autofocus>
-    </div>
-
-    <button onclick="cekStok()">Cek Stok Barang</button>
-
-    <div id="resultBox" class="result-box">
-        <h3>Hasil Produk:</h3>
-        <p><strong>Nama Barang:</strong> <span id="resName"></span></p>
-        <p><strong>PLU / Barcode:</strong> <span id="resPlu"></span> / <span id="resBarcode"></span></p>
-        <p><strong>Plano:</strong> <span id="resPlano"></span></p>
-        <p><strong>Stok Sistem (APO):</strong> <span id="resStock" style="font-size: 18px; font-weight: bold; color: #2e7d32;"></span></p>
-    </div>
-
-    <div id="errorBox" class="error-box">
-        <strong>Gagal:</strong> <span id="errMessage"></span>
-    </div>
-</div>
-
-<script>
-    async function cekStok() {
-        const token = document.getElementById("token").value.trim();
-        const barcode = document.getElementById("barcode").value.trim();
+    <!-- KARTU LOGIN -->
+    <div class="card" id="loginCard">
+        <h3>Login Sistem</h3>
+        <label>NIK:</label>
+        <input type="text" id="nik" placeholder="Masukkan NIK...">
         
-        const resultBox = document.getElementById("resultBox");
-        const errorBox = document.getElementById("errorBox");
+        <label>PIN:</label>
+        <input type="password" id="pin" placeholder="Masukkan PIN...">
+
+        <label>OTP:</label>
+        <input type="text" id="otp" placeholder="Masukkan OTP...">
+
+        <button onclick="prosesLogin()">Masuk / Ambil Token</button>
+        <p id="statusLogin" style="text-align: center; font-size: 13px; color: #666;"></p>
+    </div>
+
+    <!-- KARTU UTAMA (STOCK OPNAME) - Disembunyikan dulu sebelum login sukses -->
+    <div class="card hidden" id="appCard">
+        <h3>Stock Opname</h3>
+        <p style="font-size: 12px; color: green; text-align: center;">Status: Login Berhasil (Token Aman)</p>
         
-        resultBox.style.display = "none";
-        errorBox.style.display = "none";
+        <label>Barcode / Kode Barang:</label>
+        <input type="text" id="kodeBarang" placeholder="Scan atau ketik kode...">
+        
+        <label>Qty Fisik:</label>
+        <input type="number" id="qtyFisik" placeholder="Jumlah...">
 
-        if (!token) {
-            alert("Token belum diisi!");
-            return;
-        }
-        if (!barcode) {
-            alert("Barcode belum diisi / di-scan!");
-            return;
-        }
+        <button onclick="tambahData()">Tambah ke Daftar</button>
 
-        const payloadData = {
-            companyCode: "SAT",
-            productBarcode: barcode,
-            storeCode: "M104",
-            storeDc: "MZ01"
-        };
+        <table id="tabelSO">
+            <thead>
+                <tr>
+                    <th>Kode</th>
+                    <th>Qty</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
 
-        const targetUrl = "https://apo-apps-gateway.alfagift.id/v2/order/product/scan";
-        const proxyUrl = "https://corsproxy.io/?";
+        <button onclick="exportExcel()" style="background: #28a745; margin-top: 15px;">Download Excel (.xlsx)</button>
+    </div>
 
-        try {
-            const response = await fetch(proxyUrl + encodeURIComponent(targetUrl), {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json; charset=UTF-8",
-                    "Authorization": token.startsWith("Bearer ") ? token : "Bearer " + token,
-                    "appversion": "4090003",
-                    "platformtype": "Android",
-                    "devicemodel": "LGE LM-V600"
-                },
-                body: JSON.stringify(payloadData)
-            });
+    <script>
+        let tokenGlobal = "";
+        let dataSO = [];
 
-            const data = await response.json();
+        async function prosesLogin() {
+            let nik = document.getElementById('nik').value;
+            let pin = document.getElementById('pin').value;
+            let otp = document.getElementById('otp').value;
+            let status = document.getElementById('statusLogin');
 
-            if (response.ok && data.code === 200 && data.payload) {
-                document.getElementById("resName").innerText = data.payload.productName;
-                document.getElementById("resPlu").innerText = data.payload.plu;
-                document.getElementById("resBarcode").innerText = data.payload.barcode;
-                document.getElementById("resPlano").innerText = data.payload.plano;
-                document.getElementById("resStock").innerText = data.payload.stock;
-                
-                resultBox.style.display = "block";
-                
-                document.getElementById("barcode").value = "";
-                document.getElementById("barcode").focus();
-            } else {
-                document.getElementById("errMessage").innerText = data.message || "Gagal mengambil data dari server.";
-                errorBox.style.display = "block";
+            if(!nik || !pin || !otp) {
+                alert('Semua kolom harus diisi!');
+                return;
             }
-        } catch (error) {
-            document.getElementById("errMessage").innerText = "Terjadi kesalahan jaringan atau CORS: " + error;
-            errorBox.style.display = "block";
-        }
-    }
 
-    document.getElementById("barcode").addEventListener("keypress", function(event) {
-        if (event.key === "Enter") {
-            cekStok();
-        }
-    });
-</script>
+            status.innerText = "Menghubungkan ke server...";
 
+            try {
+                // Memanggil Netlify Function kita sendiri (Bebas CORS!)
+                let response = await fetch('/.netlify/functions/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nik, pin, otp })
+                });
+
+                let result = await response.json();
+
+                if(response.ok && result.success) {
+                    tokenGlobal = result.token;
+                    alert("Login Berhasil! Token didapatkan.");
+                    
+                    // Pindah tampilan dari Card Login ke Card Aplikasi Stock Opname
+                    document.getElementById('loginCard').classList.add('hidden');
+                    document.getElementById('appCard').classList.remove('hidden');
+                } else {
+                    status.innerText = "Gagal: " + (result.message || "Autentikasi ditolak");
+                }
+            } catch (error) {
+                status.innerText = "Terjadi kesalahan jaringan.";
+                console.error(error);
+            }
+        }
+
+        function tambahData() {
+            let kode = document.getElementById('kodeBarang').value;
+            let qty = document.getElementById('qtyFisik').value;
+
+            if(!kode || !qty) return alert('Isi data barang dengan benar!');
+
+            dataSO.push({ Kode: kode, Qty: qty });
+
+            let tbody = document.querySelector('#tabelSO tbody');
+            let tr = document.createElement('tr');
+            tr.innerHTML = `<td>${kode}</td><td>${qty}</td>`;
+            tbody.appendChild(tr);
+
+            document.getElementById('kodeBarang').value = '';
+            document.getElementById('qtyFisik').value = '';
+            document.getElementById('kodeBarang').focus();
+        }
+
+        function exportExcel() {
+            if(dataSO.length === 0) return alert('Belum ada data!');
+            let ws = XLSX.utils.json_to_sheet(dataSO);
+            let wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "StockOpname");
+            XLSX.writeFile(wb, "StockOpname_Hasil.xlsx");
+        }
+    </script>
 </body>
 </html>
