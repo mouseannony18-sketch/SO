@@ -67,7 +67,7 @@
         let tokenGlobal = "";
         let dataSO = [];
 
-        async function prosesLogin() {
+                async function prosesLogin() {
             let nik = document.getElementById('nik').value;
             let pin = document.getElementById('pin').value;
             let otp = document.getElementById('otp').value;
@@ -80,11 +80,14 @@
 
             status.innerText = "Menghubungkan ke server...";
 
+            // Mengambil info perangkat asli dari browser HP Anda
+            let userAgentAsli = navigator.userAgent; 
+
             try {
                 let response = await fetch('/.netlify/functions/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nik, pin, otp })
+                    body: JSON.stringify({ nik, pin, otp, userAgent: userAgentAsli })
                 });
 
                 let result = await response.json();
@@ -103,6 +106,7 @@
                 console.error(error);
             }
         }
+
 
         function tambahData() {
             let kode = document.getElementById('kodeBarang').value;
