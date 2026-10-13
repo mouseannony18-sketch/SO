@@ -67,7 +67,7 @@
         let tokenGlobal = "";
         let dataSO = [];
 
-                async function prosesLogin() {
+                        async function prosesLogin() {
             let nik = document.getElementById('nik').value;
             let pin = document.getElementById('pin').value;
             let otp = document.getElementById('otp').value;
@@ -78,16 +78,41 @@
                 return;
             }
 
-            status.innerText = "Menghubungkan ke server...";
+            status.innerText = "Mendeteksi perangkat & menghubungi server...";
 
-            // Mengambil info perangkat asli dari browser HP Anda
-            let userAgentAsli = navigator.userAgent; 
+            // Mengambil User-Agent asli browser
+            let userAgentAsli = navigator.userAgent;
+            
+            // Mencoba mendeteksi model/merek perangkat dari User-Agent
+            let deviceModelAsli = "Android Device";
+            let match = userAgentAsli.match(/\(([^)]+)\)/);
+            if (match && match[1]) {
+                let parts = match[1].split(';');
+                // Biasanya bagian dalam tanda kurung memuat info perangkat (misal: Linux; U; Android 13; SM-A528B...)
+                for (let part of parts) {
+                    part = part.trim();
+                    if (part.includes('Build/') || part.length > 3 && !part.startsWith('Android') && !part.startsWith('iPhone') && !part.startsWith('iPad') && !part.startsWith('Linux')) {
+                        deviceModelAsli = part.split(' Build/')[0].trim();
+                        break;
+                    }
+                }
+                // Fallback jika tidak ketemu, ambil info OS/Platform
+                if (deviceModelAsli === "Android Device" && parts.length > 1) {
+                    deviceModelAsli = parts[parts.length - 1].trim();
+                }
+            }
 
             try {
                 let response = await fetch('/.netlify/functions/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nik, pin, otp, userAgent: userAgentAsli })
+                    body: JSON.stringify({ 
+                        nik, 
+                        pin, 
+                        otp, 
+                        userAgent: userAgentAsli, 
+                        deviceModel: deviceModelAsli 
+                    })
                 });
 
                 let result = await response.json();
