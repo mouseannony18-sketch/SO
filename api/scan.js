@@ -1,3 +1,5 @@
+const crypto = require('crypto');
+
 module.exports = async function (req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ message: "Method Not Allowed" });
@@ -10,10 +12,8 @@ module.exports = async function (req, res) {
             return res.status(400).json({ success: false, message: "Token atau barcode tidak boleh kosong" });
         }
 
-        // Endpoint target untuk scan/cek produk
         const targetApiUrl = "https://apo-apps-gateway.alfagift.id/v2/order/product/scan";
 
-        // Payload yang dikirim ke server pusat
         const payload = {
             productBarcode: barcode,
             storeCode: storeCode || "",
@@ -22,7 +22,7 @@ module.exports = async function (req, res) {
         };
 
         const apiResponse = await fetch(targetApiUrl, {
-            method: 'PUT', // Menyesuaikan metode endpoint scan
+            method: 'PUT',
             headers: {
                 "Content-Type": "application/json; charset=UTF-8",
                 "Authorization": `Bearer ${token}`
@@ -33,9 +33,14 @@ module.exports = async function (req, res) {
         const resData = await apiResponse.json();
 
         if (apiResponse.ok) {
+            // Mengambil data nama dan stok sistem dari payload respons API
+            const productData = resData.payload || resData;
+            
             return res.status(200).json({
                 success: true,
-                data: resData
+                productName: productData.productName || productData.name || "Barang Scan",
+                systemStock: productData.stock || productData.systemStock || productData.qtyStock || 0,
+                raw: productData
             });
         } else {
             return res.status(400).json({
