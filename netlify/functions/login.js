@@ -15,7 +15,7 @@ exports.handler = async function(event, context) {
             nik: nik,
             pin: pin,
             otp: otp,
-            isValidate: "false",
+            isValidate: "true",
             isGPSActive: "true"
         };
         
