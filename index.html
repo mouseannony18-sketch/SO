@@ -142,23 +142,72 @@
             }
         }
 
-        function tambahData() {
-            let kode = document.getElementById('kodeBarang').value;
+                async function tambahData() {
+            let kode = document.getElementById('kodeBarang').value.trim();
             let qty = document.getElementById('qtyFisik').value;
 
-            if(!kode || !qty) return alert('Isi data barang dengan benar!');
+            if(!kode || !qty) {
+                alert('Isi kode barcode dan qty fisik dengan benar!');
+                return;
+            }
 
-            dataSO.push({ Kode: kode, Qty: qty });
+            let savedToken = localStorage.getItem('apo_token');
+            if (!savedToken) {
+                alert('Sesi habis, silakan login ulang.');
+                logout();
+                return;
+            }
 
-            let tbody = document.querySelector('#tabelSO tbody');
-            let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${kode}</td><td>${qty}</td>`;
-            tbody.appendChild(tr);
+            // Indikator loading kecil
+            let btnTambah = event.target;
+            let originalText = btnTambah.innerText;
+            btnTambah.innerText = "Memeriksa...";
+            btnTambah.disabled = true;
 
-            document.getElementById('kodeBarang').value = '';
-            document.getElementById('qtyFisik').value = '';
-            document.getElementById('kodeBarang').focus();
+            try {
+                // Menembak serverless function /api/scan
+                let response = await fetch('/api/scan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        barcode: kode, 
+                        token: savedToken,
+                        storeCode: "", // Bisa diisi kode toko jika diperlukan
+                        companyCode: ""
+                    })
+                });
+
+                let result = await response.json();
+
+                if (response.ok && result.success) {
+                    // Ambil nama barang atau deskripsi dari respons API jika ada
+                    let namaBarang = result.data.payload?.productName || result.data.productName || "Barang Scan";
+                    
+                    // Masukkan ke dalam tabel penampung Stock Opname
+                    dataSO.push({ Kode: kode, Nama: namaBarang, Qty: qty });
+
+                    let tbody = document.querySelector('#tabelSO tbody');
+                    let tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${kode} <br><small style="color:#666;">${namaBarang}</small></td><td>${qty}</td>`;
+                    tbody.appendChild(tr);
+
+                    // Reset input barcode untuk scan berikutnya
+                    document.getElementById('kodeBarang').value = '';
+                    document.getElementById('qtyFisik').value = '';
+                    document.getElementById('kodeBarang').focus();
+                } else {
+                    alert("Gagal memuat barang: " + (result.message || "Barang tidak ditemukan"));
+                }
+
+            } catch (error) {
+                console.error(error);
+                alert("Terjadi kesalahan jaringan saat memindai barang.");
+            } finally {
+                btnTambah.innerText = originalText;
+                btnTambah.disabled = false;
+            }
         }
+
 
         function exportExcel() {
             if(dataSO.length === 0) return alert('Belum ada data!');
