@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Stock Opname APO</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f6f9; color: #333; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #d32f2f; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"] { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+        button { background-color: #d32f2f; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 100%; }
+        button:hover { background-color: #b71c1c; }
+        .result-box { margin-top: 20px; padding: 15px; background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 4px; display: none; }
+        .error-box { margin-top: 20px; padding: 15px; background: #ffebee; border: 1px solid #ffcdd2; border-radius: 4px; display: none; color: #c62828; }
+        .token-status { font-size: 12px; margin-top: 5px; color: #666; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Stock Opname APO</h2>
+    
+    <div class="form-group">
+        <label for="token">Bearer Token Sesi:</label>
+        <input type="text" id="token" placeholder="Otomatis terdeteksi atau isi manual...">
+        <div id="tokenStatus" class="token-status">Mencari token dari sesi browser...</div>
+    </div>
+
+    <div class="form-group">
+        <label for="barcode">Scan / Ketik Barcode:</label>
+        <input type="text" id="barcode" placeholder="Scan barcode produk di sini..." autofocus>
+    </div>
+
+    <button onclick="cekStok()">Cek Stok Barang</button>
+
+    <div id="resultBox" class="result-box">
+        <h3>Hasil Produk:</h3>
+        <p><strong>Nama Barang:</strong> <span id="resName"></span></p>
+        <p><strong>PLU / Barcode:</strong> <span id="resPlu"></span> / <span id="resBarcode"></span></p>
+        <p><strong>Plano:</strong> <span id="resPlano"></span></p>
+        <p><strong>Stok Sistem (APO):</strong> <span id="resStock" style="font-size: 18px; font-weight: bold; color: #2e7d32;"></span></p>
+    </div>
+
+    <div id="errorBox" class="error-box">
+        <strong>Gagal:</strong> <span id="errMessage"></span>
+    </div>
+</div>
+
+<script>
+    // Otomatis mencoba mendeteksi token saat halaman dimuat
+    window.onload = function() {
+        let detectedToken = "";
+        
+        // Cek apakah token tersimpan di localStorage/sessionStorage browser portal APO
+        try {
+            detectedToken = localStorage.getItem("token") || sessionStorage.getItem("token") || localStorage.getItem("bearer_token");
+        } catch(e) {
+            console.log("Akses storage dibatasi cross-origin");
+        }
+
+        if (detectedToken) {
+            document.getElementById("token").value = detectedToken;
+            document.getElementById("tokenStatusinnerText = " + "Token berhasil dimuat otomatis dari sesi browser!");
+            document.getElementById("tokenStatus").style.color = "green";
+        } else {
+            document.getElementById("tokenStatus").innerText = "Token tidak ditemukan otomatis. Pastikan Anda sudah login atau masukkan token manual.";
+        }
+    };
+
+    // Fungsi untuk menembak API APO Alfamart sesuai struktur payload yang kita temukan
+    async function cekStok() {
+        const token = document.getElementById("token").value.trim();
+        const barcode = document.getElementById("barcode").value.trim();
+        
+        const resultBox = document.getElementById("resultBox");
+        const errorBox = document.getElementById("errorBox");
+        
+        resultBox.style.display = "none";
+        errorBox.style.display = "none";
+
+        if (!token) {
+            alert("Token belum diisi!");
+            return;
+        }
+        if (!barcode) {
+            alert("Barcode belum diisi / di-scan!");
+            return;
+        }
+
+        // Susunan data sesuai payload yang terekam di Reqable
+        const payloadData = {
+            companyCode: "SAT",
+            productBarcode: barcode,
+            storeCode: "M104",       // Nanti bisa disesuaikan dengan kode toko Anda
+            storeDc: "MZ01"          // Nanti bisa disesuaikan dengan DC Anda
+        };
+
+        try {
+            const response = await fetch("https://apo-apps-gateway.alfagift.id/v2/order/product/scan", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json; charset=UTF-8",
+                    "Authorization": token.startsWith("Bearer ") ? token : "Bearer " + token,
+                    "appversion": "4090003",
+                    "platformtype": "Android",
+                    "devicemodel": "LGE LM-V600"
+                },
+                body: JSON.stringify(payloadData)
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.code === 200 && data.payload) {
+                // Tampilkan hasil sukses
+                document.getElementById("resName").innerText = data.payload.productName;
+                document.getElementById("resPlu").innerText = data.payload.plu;
+                document.getElementById("resBarcode").innerText = data.payload.barcode;
+                document.getElementById("resPlano").innerText = data.payload.plano;
+                document.getElementById("resStock").innerText = data.payload.stock;
+                
+                resultBox.style.display = "block";
+                
+                // Bersihkan kolom barcode & fokus ulang agar siap scan berikutnya
+                document.getElementById("barcode").value = "";
+                document.getElementById("barcode").focus();
+            } else {
+                document.getElementById("errMessage").innerText = data.message || "Gagal mengambil data dari server.";
+                errorBox.style.display = "block";
+            }
+        } catch (error) {
+            document.getElementById("errMessage").innerText = "Terjadi kesalahan jaringan atau CORS diblokir browser. " + error;
+            errorBox.style.display = "block";
+        }
+    }
+
+    // Shortcut: Tekan Enter pada input barcode langsung memicu tombol cek
+    document.getElementById("barcode").addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            cekStok();
+        }
+    });
+</script>
+
+</body>
+</html>
