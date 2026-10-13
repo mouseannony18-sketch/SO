@@ -1,4 +1,5 @@
 const fetch = require('node-fetch');
+const crypto = require('crypto');
 
 exports.handler = async function(event, context) {
     if (event.httpMethod !== 'POST') {
@@ -6,11 +7,26 @@ exports.handler = async function(event, context) {
     }
 
     try {
-        const { nik, pin, otp } = JSON.parse(event.body);
+        const { nik, pin, otp, userAgent, deviceModel } = JSON.parse(event.body);
 
         const targetApiUrl = "https://apo-apps-gateway.alfagift.id/v1/auth/login";
 
-        // Menambahkan parameter lengkap sesuai kebutuhan payload sistem
+        // Membuat deviceid unik konsisten berdasarkan NIK
+        const deviceId = crypto.createHash('md5').update(nik).digest('hex');
+
+        // Menggunakan User-Agent dan Device Model asli dari perangkat pengguna
+        const clientUserAgent = userAgent || "okhttp/5.3.2";
+        const clientDeviceModel = deviceModel || "Android-Mobile";
+
+        const headers = {
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+            "appversion": "4090003",
+            "deviceid": deviceId,
+            "platformtype": "Android",
+            "devicemodel": clientDeviceModel, // Merek/tipe HP asli pengguna
+            "user-agent": clientUserAgent
+        };
+
         const details = {
             nik: nik,
             pin: pin,
@@ -29,21 +45,20 @@ exports.handler = async function(event, context) {
 
         const apiResponse = await fetch(targetApiUrl, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-            },
+            headers: headers,
             body: formBody
         });
 
-        const data = await apiResponse.json();
+        const resData = await apiResponse.json();
 
-        // Mengembalikan respons asli dari server untuk diagnosa jika masih gagal
-        if (apiResponse.ok) {
+        if (apiResponse.ok && resData.code === 200) {
+            const token = resData.payload?.token || resData.token;
+
             return {
                 statusCode: 200,
                 body: JSON.stringify({
                     success: true,
-                    token: data.token || data.access_token || data.data?.token || "TOKEN_BERHASIL"
+                    token: token || "TOKEN_BERHASIL"
                 })
             };
         } else {
@@ -51,7 +66,7 @@ exports.handler = async function(event, context) {
                 statusCode: 400,
                 body: JSON.stringify({
                     success: false,
-                    message: data.message || data.error || "Autentikasi ditolak oleh server"
+                    message: resData.message || "Server menolak login"
                 })
             };
         }
