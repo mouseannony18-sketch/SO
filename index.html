@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login & Stock Opname</title>
-    <!-- SheetJS via CDN untuk export Excel nanti -->
+    <!-- SheetJS via CDN untuk export Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         body { font-family: sans-serif; background: #f4f4f9; padding: 20px; margin: 0; }
@@ -37,7 +37,7 @@
         <p id="statusLogin" style="text-align: center; font-size: 13px; color: #666;"></p>
     </div>
 
-    <!-- KARTU UTAMA (STOCK OPNAME) - Disembunyikan dulu sebelum login sukses -->
+    <!-- KARTU UTAMA (STOCK OPNAME) -->
     <div class="card hidden" id="appCard">
         <h3>Stock Opname</h3>
         <p style="font-size: 12px; color: green; text-align: center;">Status: Login Berhasil (Token Aman)</p>
@@ -81,7 +81,6 @@
             status.innerText = "Menghubungkan ke server...";
 
             try {
-                // Memanggil Netlify Function kita sendiri (Bebas CORS!)
                 let response = await fetch('/.netlify/functions/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -94,7 +93,6 @@
                     tokenGlobal = result.token;
                     alert("Login Berhasil! Token didapatkan.");
                     
-                    // Pindah tampilan dari Card Login ke Card Aplikasi Stock Opname
                     document.getElementById('loginCard').classList.add('hidden');
                     document.getElementById('appCard').classList.remove('hidden');
                 } else {
