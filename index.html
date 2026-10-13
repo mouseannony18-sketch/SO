@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login & Stock Opname</title>
+    <title>Login & Stock Opname (Vercel)</title>
     <!-- SheetJS via CDN untuk export Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
@@ -23,7 +23,7 @@
 
     <!-- KARTU LOGIN -->
     <div class="card" id="loginCard">
-        <h3>Login Sistem1</h3>
+        <h3>Login Sistem</h3>
         <label>NIK:</label>
         <input type="text" id="nik" placeholder="Masukkan NIK...">
         
@@ -67,7 +67,7 @@
         let tokenGlobal = "";
         let dataSO = [];
 
-                        async function prosesLogin() {
+        async function prosesLogin() {
             let nik = document.getElementById('nik').value;
             let pin = document.getElementById('pin').value;
             let otp = document.getElementById('otp').value;
@@ -80,30 +80,23 @@
 
             status.innerText = "Mendeteksi perangkat & menghubungi server...";
 
-            // Mengambil User-Agent asli browser
             let userAgentAsli = navigator.userAgent;
-            
-            // Mencoba mendeteksi model/merek perangkat dari User-Agent
             let deviceModelAsli = "Android Device";
             let match = userAgentAsli.match(/\(([^)]+)\)/);
             if (match && match[1]) {
                 let parts = match[1].split(';');
-                // Biasanya bagian dalam tanda kurung memuat info perangkat (misal: Linux; U; Android 13; SM-A528B...)
                 for (let part of parts) {
                     part = part.trim();
-                    if (part.includes('Build/') || part.length > 3 && !part.startsWith('Android') && !part.startsWith('iPhone') && !part.startsWith('iPad') && !part.startsWith('Linux')) {
+                    if (part.includes('Build/') || part.length > 3 && !part.startsWith('Android') && !part.startsWith('iPhone') && !part.startsWith('Linux')) {
                         deviceModelAsli = part.split(' Build/')[0].trim();
                         break;
                     }
                 }
-                // Fallback jika tidak ketemu, ambil info OS/Platform
-                if (deviceModelAsli === "Android Device" && parts.length > 1) {
-                    deviceModelAsli = parts[parts.length - 1].trim();
-                }
             }
 
             try {
-                let response = await fetch('/.netlify/functions/login', {
+                // Endpoint Vercel Serverless Function (/api/login)
+                let response = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
@@ -131,7 +124,6 @@
                 console.error(error);
             }
         }
-
 
         function tambahData() {
             let kode = document.getElementById('kodeBarang').value;
