@@ -1,4 +1,4 @@
-const fetch = require('node-fetch'); // Atau gunakan native fetch jika Node.js versi baru
+const fetch = require('node-fetch');
 
 exports.handler = async function(event, context) {
     if (event.httpMethod !== 'POST') {
@@ -8,14 +8,30 @@ exports.handler = async function(event, context) {
     try {
         const { nik, pin, otp } = JSON.parse(event.body);
 
-        // URL Endpoint API server perusahaan Anda yang sebenarnya
-        const targetApiUrl = "https://api.contohserver.com/v1/login"; 
+        // Endpoint API Gateway yang sesuai
+        const targetApiUrl = "https://apo-apps-gateway.alfagift.id/v1/auth/login";
 
-        // Server Netlify yang melakukan request (Tidak terkena CORS oleh server tujuan)
+        // Menggunakan format x-www-form-urlencoded sesuai spesifikasi endpoint
+        const details = {
+            nik: nik,
+            pin: pin,
+            otp: otp
+        };
+        
+        let formBody = [];
+        for (let property in details) {
+            let encodedKey = encodeURIComponent(property);
+            let encodedValue = encodeURIComponent(details[property]);
+            formBody.push(encodedKey + "=" + encodedValue);
+        }
+        formBody = formBody.join("&");
+
         const apiResponse = await fetch(targetApiUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nik, pin, otp })
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+            },
+            body: formBody
         });
 
         const data = await apiResponse.json();
@@ -25,7 +41,7 @@ exports.handler = async function(event, context) {
                 statusCode: 200,
                 body: JSON.stringify({
                     success: true,
-                    token: data.token || "CONTOH_TOKEN_DARI_API_12345"
+                    token: data.token || data.access_token || "TOKEN_BERHASIL_DIDAPATKAN"
                 })
             };
         } else {
