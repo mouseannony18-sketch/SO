@@ -8,14 +8,15 @@ exports.handler = async function(event, context) {
     try {
         const { nik, pin, otp } = JSON.parse(event.body);
 
-        // Endpoint API Gateway yang sesuai
         const targetApiUrl = "https://apo-apps-gateway.alfagift.id/v1/auth/login";
 
-        // Menggunakan format x-www-form-urlencoded sesuai spesifikasi endpoint
+        // Menambahkan parameter lengkap sesuai kebutuhan payload sistem
         const details = {
             nik: nik,
             pin: pin,
-            otp: otp
+            otp: otp,
+            isValidate: "false",
+            isGPSActive: "true"
         };
         
         let formBody = [];
@@ -36,12 +37,13 @@ exports.handler = async function(event, context) {
 
         const data = await apiResponse.json();
 
+        // Mengembalikan respons asli dari server untuk diagnosa jika masih gagal
         if (apiResponse.ok) {
             return {
                 statusCode: 200,
                 body: JSON.stringify({
                     success: true,
-                    token: data.token || data.access_token || "TOKEN_BERHASIL_DIDAPATKAN"
+                    token: data.token || data.access_token || data.data?.token || "TOKEN_BERHASIL"
                 })
             };
         } else {
@@ -49,7 +51,7 @@ exports.handler = async function(event, context) {
                 statusCode: 400,
                 body: JSON.stringify({
                     success: false,
-                    message: data.message || "Gagal dari server tujuan"
+                    message: data.message || data.error || "Autentikasi ditolak oleh server"
                 })
             };
         }
