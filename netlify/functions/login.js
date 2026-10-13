@@ -1,5 +1,4 @@
 const fetch = require('node-fetch');
-const crypto = require('crypto');
 
 exports.handler = async function(event, context) {
     if (event.httpMethod !== 'POST') {
@@ -11,19 +10,21 @@ exports.handler = async function(event, context) {
 
         const targetApiUrl = "https://apo-apps-gateway.alfagift.id/v1/auth/login";
 
-        // Membuat deviceid unik konsisten berdasarkan NIK
-        const deviceId = crypto.createHash('md5').update(nik).digest('hex');
-
-        // Menggunakan User-Agent dan Device Model asli dari perangkat pengguna
+        // Menggunakan user-agent okhttp standar seperti di script Python yang terbukti sukses
         const clientUserAgent = userAgent || "okhttp/5.3.2";
-        const clientDeviceModel = deviceModel || "Android-Mobile";
+        const clientDeviceModel = deviceModel || "Termux-Python-Client";
 
+        // Membuat device id statis berbasis NIK agar konsisten
+        const crypto = require('crypto');
+        const dynamicDeviceId = crypto.createHash('sha1').update(nik + "alfagift_salt").digest('hex');
+
+        // Headers dibuat persis seperti script Python yang sukses
         const headers = {
             "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
             "appversion": "4090003",
-            "deviceid": deviceId,
+            "deviceid": dynamicDeviceId,
             "platformtype": "Android",
-            "devicemodel": clientDeviceModel, // Merek/tipe HP asli pengguna
+            "devicemodel": clientDeviceModel,
             "user-agent": clientUserAgent
         };
 
@@ -66,7 +67,7 @@ exports.handler = async function(event, context) {
                 statusCode: 400,
                 body: JSON.stringify({
                     success: false,
-                    message: resData.message || "Server menolak login"
+                    message: resData.message || "Autentikasi ditolak oleh server"
                 })
             };
         }
