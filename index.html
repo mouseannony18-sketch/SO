@@ -41,22 +41,25 @@
 
     <!-- KARTU UTAMA (STOCK OPNAME) -->
     <div class="card hidden" id="appCard">
-        <h3>Stock Opname1</h3>
-        <p style="font-size: 12px; color: green; text-align: center;">Status: Sesi Login Aktif (Tersimpan di Browser)</p>
+        <!-- KARTU UTAMA (STOCK OPNAME) -->
+    <div class="card hidden" id="appCard">
+        <h3>Stock Opname</h3>
+        <p style="font-size: 12px; color: green; text-align: center;">Status: Sesi Login Aktif</p>
         
         <label>Barcode / Kode Barang:</label>
         <input type="text" id="kodeBarang" placeholder="Scan atau ketik kode...">
         
-        <label>Qty Fisik:</label>
-        <input type="number" id="qtyFisik" placeholder="Jumlah...">
+        <label>Qty Hitung (Fisik):</label>
+        <input type="number" id="qtyFisik" placeholder="Jumlah fisik...">
 
         <button onclick="tambahData()">Tambah ke Daftar</button>
 
         <table id="tabelSO">
             <thead>
                 <tr>
-                    <th>Kode</th>
-                    <th>Qty</th>
+                    <th>Barang / Deskripsi</th>
+                    <th>Qty Hitung</th>
+                    <th>Stok Sistem</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -142,12 +145,12 @@
             }
         }
 
-                async function tambahData() {
+                        async function tambahData() {
             let kode = document.getElementById('kodeBarang').value.trim();
-            let qty = document.getElementById('qtyFisik').value;
+            let qtyFisik = document.getElementById('qtyFisik').value;
 
-            if(!kode || !qty) {
-                alert('Isi kode barcode dan qty fisik dengan benar!');
+            if(!kode || !qtyFisik) {
+                alert('Isi kode barcode dan qty hitung fisik dengan benar!');
                 return;
             }
 
@@ -158,40 +161,46 @@
                 return;
             }
 
-            // Indikator loading kecil
             let btnTambah = event.target;
             let originalText = btnTambah.innerText;
             btnTambah.innerText = "Memeriksa...";
             btnTambah.disabled = true;
 
             try {
-                // Menembak serverless function /api/scan
                 let response = await fetch('/api/scan', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         barcode: kode, 
-                        token: savedToken,
-                        storeCode: "", // Bisa diisi kode toko jika diperlukan
-                        companyCode: ""
+                        token: savedToken 
                     })
                 });
 
                 let result = await response.json();
 
                 if (response.ok && result.success) {
-                    // Ambil nama barang atau deskripsi dari respons API jika ada
-                    let namaBarang = result.data.payload?.productName || result.data.productName || "Barang Scan";
+                    let namaBarang = result.productName;
+                    let stokSistem = result.systemStock;
                     
-                    // Masukkan ke dalam tabel penampung Stock Opname
-                    dataSO.push({ Kode: kode, Nama: namaBarang, Qty: qty });
+                    // Simpan ke array data untuk export excel nanti
+                    dataSO.push({ 
+                        Barcode: kode, 
+                        Deskripsi: namaBarang, 
+                        Qty_Hitung: qtyFisik, 
+                        Stok_Sistem: stokSistem 
+                    });
 
+                    // Render ke tabel HTML
                     let tbody = document.querySelector('#tabelSO tbody');
                     let tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${kode} <br><small style="color:#666;">${namaBarang}</small></td><td>${qty}</td>`;
+                    tr.innerHTML = `
+                        <td><b>${kode}</b><br><small style="color:#555;">${namaBarang}</small></td>
+                        <td style="text-align: center; font-weight: bold; color: #007bff;">${qtyFisik}</td>
+                        <td style="text-align: center; color: #555;">${stokSistem}</td>
+                    `;
                     tbody.appendChild(tr);
 
-                    // Reset input barcode untuk scan berikutnya
+                    // Reset input
                     document.getElementById('kodeBarang').value = '';
                     document.getElementById('qtyFisik').value = '';
                     document.getElementById('kodeBarang').focus();
@@ -207,7 +216,6 @@
                 btnTambah.disabled = false;
             }
         }
-
 
         function exportExcel() {
             if(dataSO.length === 0) return alert('Belum ada data!');
