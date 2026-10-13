@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login & Stock Opname (Vercel)</title>
+    <title>Stock Opname Mobile</title>
     <!-- SheetJS via CDN untuk export Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
@@ -17,13 +17,15 @@
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border: 1px solid #ddd; padding: 8px; font-size: 13px; text-align: left; }
         th { background: #f8f9fa; }
+        .logout-btn { background: #dc3545; margin-top: 10px; }
+        .logout-btn:hover { background: #c82333; }
     </style>
 </head>
 <body>
 
     <!-- KARTU LOGIN -->
     <div class="card" id="loginCard">
-        <h3>Login Sistem1</h3>
+        <h3>Login Sistem</h3>
         <label>NIK:</label>
         <input type="text" id="nik" placeholder="Masukkan NIK...">
         
@@ -40,7 +42,7 @@
     <!-- KARTU UTAMA (STOCK OPNAME) -->
     <div class="card hidden" id="appCard">
         <h3>Stock Opname</h3>
-        <p style="font-size: 12px; color: green; text-align: center;">Status: Login Berhasil (Token Aman)</p>
+        <p style="font-size: 12px; color: green; text-align: center;">Status: Sesi Login Aktif (Tersimpan di Browser)</p>
         
         <label>Barcode / Kode Barang:</label>
         <input type="text" id="kodeBarang" placeholder="Scan atau ketik kode...">
@@ -61,11 +63,23 @@
         </table>
 
         <button onclick="exportExcel()" style="background: #28a745; margin-top: 15px;">Download Excel (.xlsx)</button>
+        <button onclick="logout()" class="logout-btn">Keluar / Reset Sesi</button>
     </div>
 
     <script>
         let tokenGlobal = "";
         let dataSO = [];
+
+        // Cek otomatis saat halaman pertama kali dimuat
+        window.onload = function() {
+            let savedToken = localStorage.getItem('apo_token');
+            if (savedToken) {
+                tokenGlobal = savedToken;
+                // Langsung tampilkan menu utama Stock Opname
+                document.getElementById('loginCard').classList.add('hidden');
+                document.getElementById('appCard').classList.remove('hidden');
+            }
+        };
 
         async function prosesLogin() {
             let nik = document.getElementById('nik').value;
@@ -95,7 +109,6 @@
             }
 
             try {
-                // Endpoint Vercel Serverless Function (/api/login)
                 let response = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -112,7 +125,11 @@
 
                 if(response.ok && result.success) {
                     tokenGlobal = result.token;
-                    alert("Login Berhasil! Token didapatkan.");
+                    
+                    // Simpan token ke localStorage browser agar awet
+                    localStorage.setItem('apo_token', tokenGlobal);
+
+                    alert("Login Berhasil! Sesi disimpan.");
                     
                     document.getElementById('loginCard').classList.add('hidden');
                     document.getElementById('appCard').classList.remove('hidden');
@@ -149,6 +166,22 @@
             let wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "StockOpname");
             XLSX.writeFile(wb, "StockOpname_Hasil.xlsx");
+        }
+
+        function logout() {
+            // Hapus token dari memori dan localStorage
+            localStorage.removeItem('apo_token');
+            tokenGlobal = "";
+            
+            // Kembalikan ke tampilan login
+            document.getElementById('appCard').classList.add('hidden');
+            document.getElementById('loginCard').classList.remove('hidden');
+            
+            // Kosongkan form input login
+            document.getElementById('nik').value = '';
+            document.getElementById('pin').value = '';
+            document.getElementById('otp').value = '';
+            document.getElementById('statusLogin').innerText = '';
         }
     </script>
 </body>
