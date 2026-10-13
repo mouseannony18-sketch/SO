@@ -1,4 +1,3 @@
-const fetch = require('node-fetch');
 const crypto = require('crypto');
 
 module.exports = async function (req, res) {
@@ -40,6 +39,7 @@ module.exports = async function (req, res) {
         }
         formBody = formBody.join("&");
 
+        // Menggunakan native fetch bawaan Node.js di Vercel
         const apiResponse = await fetch(targetApiUrl, {
             method: 'POST',
             headers: headers,
@@ -62,6 +62,6 @@ module.exports = async function (req, res) {
         }
 
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.toString() });
+        return res.status(500).json({ success: false, message: "Server Error: " + error.toString() });
     }
 };
