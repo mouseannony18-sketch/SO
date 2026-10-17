@@ -212,7 +212,7 @@ body {
     background: rgba(56, 189, 248, 0.15) !important;
 }
 
-/* TOMBOL AKSI 2 BARIS (RESET, CEK SELISIH, PENCARIAN 75%, SCAN 20%) */
+/* TOMBOL AKSI 2 BARIS */
 .top-action-bar-row1 {
     display: flex;
     gap: 8px;
