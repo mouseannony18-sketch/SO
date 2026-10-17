@@ -238,7 +238,7 @@ function bersihkanPencarian() {
     inputEl.focus();
 }
 
-// Buka Kamera dengan Memilih Kamera Belakang Utama (Normal / Non-Wide)
+// Buka Kamera dengan Pemilihan Lensa Utama (Normal) Secara Spesifik
 async function bukaScannerKamera() {
     let scannerBox = document.getElementById('scannerContainer');
     scannerBox.classList.remove('hidden');
@@ -250,23 +250,25 @@ async function bukaScannerKamera() {
     }
 
     try {
-        // Dapatkan daftar seluruh kamera perangkat
         let devices = await Html5Qrcode.getCameras();
-        if (devices && devices.length) {
-            let selectedCameraId = devices[0].id; // Default kamera pertama
+        if (devices && devices.length > 0) {
+            let selectedCameraId = devices[0].id;
 
-            // Cari kamera belakang (biasanya berlabel back, rear, atau bukan front)
+            // Filter khusus mencari kamera belakang (back / rear)
             let backCameras = devices.filter(device => {
                 let label = device.label.toLowerCase();
-                return label.includes('back') || label.includes('rear') || label.includes('belakang') || label.includes('0');
+                return label.includes('back') || label.includes('rear') || label.includes('belakang');
             });
 
             if (backCameras.length > 0) {
-                // Jika ada beberapa kamera belakang, pilih yang bukan ultra-wide (biasanya kamera utama berada di urutan awal kamera belakang)
-                selectedCameraId = backCameras[0].id;
+                // Jika ada beberapa kamera belakang, pilih indeks terakhir dari kamera belakang 
+                // (karena pada banyak HP multi-lensa, kamera utama / normal berada setelah lensa wide/ultrawide)
+                selectedCameraId = backCameras[backCameras.length - 1].id;
+            } else if (devices.length > 1) {
+                // Fallback jika label tidak terbaca browser, pilih kamera kedua (biasanya kamera belakang utama)
+                selectedCameraId = devices[1].id;
             }
 
-            // Jalankan scanner menggunakan ID kamera utama spesifik tersebut
             await html5QrCode.start(
                 selectedCameraId,
                 { 
@@ -280,13 +282,13 @@ async function bukaScannerKamera() {
                 (errorMessage) => {}
             );
         } else {
-            throw "Tidak ada kamera yang ditemukan.";
+            throw "Tidak ada kamera terdeteksi.";
         }
     } catch (err) {
-        // Fallback otomatis ke environment standar jika pengambilan list kamera gagal
-        console.warn("Gagal memilih kamera spesifik, menggunakan mode default:", err);
+        console.warn("Gagal menggunakan ID spesifik, mencoba mode environment:", err);
+        // Fallback terakhir menggunakan parameter exact environment
         html5QrCode.start(
-            { facingMode: "environment" },
+            { facingMode: { exact: "environment" } },
             { fps: 15, qrbox: { width: 260, height: 140 } },
             (decodedText) => {
                 tutupScannerKamera();
@@ -299,6 +301,7 @@ async function bukaScannerKamera() {
         });
     }
 }
+
 
 // Kontrol LED Flash (Senter)
 function toggleFlashLight() {
