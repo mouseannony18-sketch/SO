@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Opname Mobile</title>
-    <!-- SheetJS via CDN untuk export Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -26,65 +25,65 @@
         <p id="statusLogin"></p>
     </div>
 
-    <!-- KARTU UTAMA APLIKASI (DENGAN HEADER & MENU GRID) -->
-    <div class="app-container hidden" id="mainMenuCard">
-        <!-- Header Atas -->
-        <div class="app-header">
-            <div class="header-title">
-                <span class="logo-icon">🐝</span>
-                <span class="app-title-text">Stock Opname</span>
-            </div>
-            <div class="header-actions">
-                <button class="icon-btn" title="Sesi Aktif">⏳</button>
-                <button class="icon-btn" title="Mode Gelap">🌙</button>
-                <button class="logout-top-btn" onclick="logout()">Keluar</button>
-            </div>
-        </div>
-
-        <!-- Banner Selamat Datang -->
-        <div class="welcome-banner">
-            <h2>👑 Selamat Datang!</h2>
-            <p>Semoga stockopname kamu maksimal 💪</p>
-            <p class="nik-info">NIK Aktif: <span id="userNikText"></span></p>
-        </div>
-
-        <!-- Grid Menu Kotak Berikon -->
-        <div class="menu-grid">
-            <div class="menu-item" onclick="pilihMenu('979')">
-                <div class="menu-icon-box bg-white">
-                    <span class="menu-text-badge red">979</span>
+    <!-- HALAMAN UTAMA (DIBAGI HEADER & BODY UTAMA) -->
+    <div class="main-layout hidden" id="mainMenuCard">
+        
+        <!-- 1. BAGIAN HEADER -->
+        <header class="app-header-custom">
+            <div class="header-top-row">
+                <div class="header-brand">
+                    <span class="app-logo">📦</span>
+                    <span class="app-name">Stock Opname</span>
                 </div>
-                <span class="menu-label">RAK 979</span>
+                <button class="logout-link-btn" onclick="logout()">Keluar</button>
             </div>
 
-            <div class="menu-item" onclick="pilihMenu('bebas')">
-                <div class="menu-icon-box bg-white">
-                    <span class="menu-text-badge blue">FREE</span>
-                </div>
-                <span class="menu-label">Rak Bebas</span>
+            <div class="header-welcome-box">
+                <h2 class="welcome-title">Selamat Datang!</h2>
+                <div class="user-real-name" id="userNameText">-</div>
+                <div class="store-real-name" id="storeNameText">-</div>
             </div>
+        </header>
 
-            <div class="menu-item" onclick="pilihMenu('partial')">
-                <div class="menu-icon-box bg-red">
-                    <span class="menu-icon-symbol">📊</span>
+        <!-- 2. BAGIAN BODY UTAMA (MENU KOTAK BULAT) -->
+        <main class="app-body-content">
+            <div class="menu-grid-custom">
+                <div class="menu-box-item" onclick="pilihMenu('979')">
+                    <div class="icon-circle bg-white-card">
+                        <span class="badge-text red">979</span>
+                    </div>
+                    <span class="menu-title-label">RAK 979</span>
                 </div>
-                <span class="menu-label">SO Reguler</span>
-            </div>
 
-            <div class="menu-item" onclick="pilihMenu('admin')">
-                <div class="menu-icon-box bg-blue">
-                    <span class="menu-icon-symbol">➕</span>
+                <div class="menu-box-item" onclick="pilihMenu('bebas')">
+                    <div class="icon-circle bg-white-card">
+                        <span class="badge-text blue">FREE</span>
+                    </div>
+                    <span class="menu-title-label">Rak Bebas</span>
                 </div>
-                <span class="menu-label">+Item</span>
+
+                <div class="menu-box-item" onclick="pilihMenu('partial')">
+                    <div class="icon-circle bg-red-card">
+                        <span class="symbol-icon">📊</span>
+                    </div>
+                    <span class="menu-title-label">SO Reguler</span>
+                </div>
+
+                <div class="menu-box-item" onclick="pilihMenu('admin')">
+                    <div class="icon-circle bg-blue-card">
+                        <span class="symbol-icon">➕</span>
+                    </div>
+                    <span class="menu-title-label">+Item</span>
+                </div>
             </div>
-        </div>
+        </main>
+
     </div>
 
     <!-- KARTU WORKSPACE (HALAMAN PENGISIAN SO & ADMIN) -->
     <div class="card hidden" id="workspaceCard">
         <h3 id="judulMenuAktif">Workspace</h3>
         
-        <!-- Area Input Standar untuk SO (Menu 1, 2, 3) -->
         <div id="soFormArea">
             <label>Barcode / Kode Barang:</label>
             <input type="text" id="kodeBarang" placeholder="Scan atau ketik kode...">
@@ -108,7 +107,6 @@
             <button onclick="exportExcel()" class="excel-btn">Download Excel (.xlsx)</button>
         </div>
 
-        <!-- Area Khusus Menu 4 (Tambah Item Inventory - Admin) -->
         <div id="adminFormArea" class="hidden">
             <p class="admin-notice"><b>Mode Khusus Admin:</b> Pendaftaran Item Inventory Baru</p>
             <label>Kode / Barcode:</label>
