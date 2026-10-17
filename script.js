@@ -361,9 +361,9 @@ function exportUniversalReport(judulLaporan, dataArray) {
 
 function downloadExcelCustomGlobal(judul, dataArray) {
     try {
-        let XLSXLib = window.XLSX || window.XLSXStyle;
+        let XLSXLib = window.XLSX;
         if (!XLSXLib) {
-            alert("Pustaka Excel belum termuat sempurna. Periksa koneksi internet atau tag script di HTML.");
+            alert("Pustaka Excel belum siap. Silakan muat ulang halaman.");
             return;
         }
 
@@ -407,84 +407,6 @@ function downloadExcelCustomGlobal(judul, dataArray) {
             { s: { r: totalRowIdx, c: 0 }, e: { r: totalRowIdx, c: 3 } } // Total Keseluruhan
         ];
 
-        let thinBorder = {
-            top: { style: "thin", color: { rgb: "000000" } },
-            bottom: { style: "thin", color: { rgb: "000000" } },
-            left: { style: "thin", color: { rgb: "000000" } },
-            right: { style: "thin", color: { rgb: "000000" } }
-        };
-
-        let thickDoubleBorder = {
-            top: { style: "medium", color: { rgb: "000000" } },
-            bottom: { style: "double", color: { rgb: "000000" } },
-            left: { style: "thin", color: { rgb: "000000" } },
-            right: { style: "thin", color: { rgb: "000000" } }
-        };
-
-        // Style Judul
-        if (ws['A1']) {
-            ws['A1'].s = {
-                fill: { fgColor: { rgb: "059669" } },
-                font: { name: "Arial", sz: 12, bold: true, color: { rgb: "FFFFFF" } },
-                alignment: { horizontal: "center", vertical: "center" }
-            };
-        }
-
-        // Style Subtitle Tanggal
-        if (ws['A2']) {
-            ws['A2'].s = {
-                fill: { fgColor: { rgb: "D1FAE5" } },
-                font: { name: "Arial", sz: 10, italic: true, color: { rgb: "065F46" } },
-                alignment: { horizontal: "center", vertical: "center" }
-            };
-        }
-
-        // Style Header Kolom (Baris indeks 3)
-        let headerStyle = {
-            fill: { fgColor: { rgb: "059669" } },
-            font: { name: "Arial", sz: 10, bold: true, color: { rgb: "FFFFFF" } },
-            alignment: { horizontal: "center", vertical: "center" },
-            border: thinBorder
-        };
-        for (let c = 0; c <= 6; c++) {
-            let cellRef = XLSXLib.utils.encode_cell({ r: 3, c: c });
-            if (!ws[cellRef]) ws[cellRef] = {};
-            ws[cellRef].s = headerStyle;
-        }
-
-        // Style Baris Data & Total
-        for (let r = 4; r <= totalRowIdx; r++) {
-            let isTotal = (r === totalRowIdx);
-            for (let c = 0; c <= 6; c++) {
-                let cellRef = XLSXLib.utils.encode_cell({ r: r, c: c });
-                if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
-
-                let val = ws[cellRef].v;
-                let align = "center";
-                if (c === 3) align = "left";
-                else if (c === 1 || c === 2) align = "right";
-
-                if (isTotal) {
-                    ws[cellRef].s = {
-                        fill: { fgColor: { rgb: "FDE047" } },
-                        font: { name: "Arial", sz: 10, bold: true, color: { rgb: "000000" } },
-                        alignment: { horizontal: (c === 0 ? "right" : "center"), vertical: "center" },
-                        border: thickDoubleBorder
-                    };
-                } else {
-                    let fontColor = { rgb: "000000" };
-                    if (c === 6 && Number(val) !== 0) {
-                        fontColor = { rgb: "DC2626" };
-                    }
-                    ws[cellRef].s = {
-                        font: { name: "Arial", sz: 10, bold: (c === 6 && Number(val) !== 0), color: fontColor },
-                        alignment: { horizontal: align, vertical: "center" },
-                        border: thinBorder
-                    };
-                }
-            }
-        }
-
         let wb = XLSXLib.utils.book_new();
         XLSXLib.utils.book_append_sheet(wb, ws, "Rak_979");
 
@@ -496,7 +418,7 @@ function downloadExcelCustomGlobal(judul, dataArray) {
         alert("Terjadi kesalahan saat mengunduh Excel: " + err.message);
     }
 }
-
+            
 function cetakPDFGlobal(judul, dataArray) {
     let todayStr = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     
