@@ -10,9 +10,9 @@ let isFlashOnBebas = false;
 let statusFilterSelisihBebas = false;
 
 async function loadMenuRakBebas() {
-    setupWorkspaceHeader("Rak Bebas / Customize", "Memuat item bebas...", false);
+    // Parameter ke-3 bernilai true agar tombol Sync Server muncul di header
+    setupWorkspaceHeader("Rak Bebas / Customize", "Memuat item bebas...", true);
 
-    // Sembunyikan menu lain agar tidak bertumpuk
     let menu979Container = document.getElementById('menu979Container');
     if (menu979Container) menu979Container.classList.add('hidden');
 
@@ -31,7 +31,6 @@ async function loadMenuRakBebas() {
     }
     menuBebasContainer.classList.remove('hidden');
 
-    // Layout HTML DISAMAKAN PERSIS 100% seperti Menu 979
     menuBebasContainer.innerHTML = `
         <!-- BARIS 1: TOMBOL RESET & CEK SELISIH -->
         <div class="top-action-bar-row1">
@@ -61,7 +60,7 @@ async function loadMenuRakBebas() {
             <div id="readerBebas"></div>
         </div>
 
-        <!-- TABEL UTAMA FULL LAYAR (Disamakan persis dengan 979 agar scrollable dan rapi) -->
+        <!-- TABEL UTAMA FULL LAYAR -->
         <div class="table-full-container">
             <table id="tabelRakBebas">
                 <thead>
@@ -140,7 +139,7 @@ function muatDataLokalRakBebas() {
         dataRakBebas = [];
     }
     renderTabelRakBebas(dataRakBebas);
-    setupWorkspaceHeader("Rak Bebas / Customize", `${dataRakBebas.length} item tersimpan`, false, `<button onclick="exportExcelRakBebas()">📥 Download / Cetak</button>`);
+    setupWorkspaceHeader("Rak Bebas / Customize", `${dataRakBebas.length} item tersimpan`, true, `<button onclick="exportExcelRakBebas()">📥 Download / Cetak</button>`);
 }
 
 function renderTabelRakBebas(listData) {
@@ -168,8 +167,8 @@ function renderTabelRakBebas(listData) {
                     <small style="font-size: 9px; display: block; color: var(--text-muted);">ketuk edit</small>
                 </div>
             </td>
-            <td style="text-align: center; font-size: 13px;">${item.oh}</td>
-            <td style="text-align: center; font-size: 13px; ${selisihWarna}">${item.selisih}</td>
+            <td style="text-align: center; font-size: 13px;" id="oh-bebas-${idx}">${item.oh}</td>
+            <td style="text-align: center; font-size: 13px; ${selisihWarna}" id="selisih-bebas-${idx}">${item.selisih}</td>
         `;
         tbody.appendChild(tr);
     });
@@ -266,6 +265,65 @@ async function tambahAtauCariItemRakBebas(code) {
     localStorage.setItem(STORAGE_KEY_BEBAS, JSON.stringify(dataRakBebas));
     renderTabelRakBebas(dataRakBebas);
     bukaPopupBebas(dataRakBebas.length - 1);
+}
+
+// FUNGSI SYNC SERVER KHUSUS RAK BEBAS (Tanpa konflik dengan 979)
+async function sinkronisasiStokServerBebas(isManual = false) {
+    let savedToken = localStorage.getItem('apo_token');
+    let isSkipped = localStorage.getItem('apo_skipped') === 'true';
+
+    if (!savedToken || isSkipped) {
+        if (isManual) alert("Mode Tamu / Belum Login: Tidak dapat melakukan sinkronisasi server.");
+        return;
+    }
+
+    if (dataRakBebas.length === 0) {
+        if (isManual) alert("Belum ada item di Rak Bebas untuk disinkronkan.");
+        return;
+    }
+
+    setupWorkspaceHeader("Rak Bebas / Customize", "Sync server...", true);
+
+    let successCount = 0;
+    for (let i = 0; i < dataRakBebas.length; i++) {
+        let item = dataRakBebas[i];
+        if (!item.barcode || item.barcode === "-") continue;
+
+        try {
+            let response = await fetch('/api/scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ barcode: item.barcode, token: savedToken })
+            });
+
+            let result = await response.json();
+            if (response.ok && result.success) {
+                item.oh = parseInt(result.systemStock) || 0;
+                item.selisih = item.qty - item.oh;
+                
+                let ohEl = document.getElementById(`oh-bebas-${i}`);
+                let selisihEl = document.getElementById(`selisih-bebas-${i}`);
+                if (ohEl) ohEl.innerText = item.oh;
+                if (selisihEl) {
+                    selisihEl.innerText = item.selisih;
+                    if (item.selisih !== 0) {
+                        selisihEl.style.color = "#ef4444";
+                        selisihEl.style.fontWeight = "bold";
+                    } else {
+                        selisihEl.style.color = "inherit";
+                        selisihEl.style.fontWeight = "normal";
+                    }
+                }
+                successCount++;
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    localStorage.setItem(STORAGE_KEY_BEBAS, JSON.stringify(dataRakBebas));
+    setupWorkspaceHeader("Rak Bebas / Customize", `${dataRakBebas.length} item tersimpan`, true, `<button onclick="exportExcelRakBebas()">📥 Download / Cetak</button>`);
+    if (isManual) alert(`Sinkronisasi Rak Bebas Berhasil! Stok ${successCount} item diperbarui.`);
 }
 
 async function bukaScannerBebas() {
@@ -408,7 +466,7 @@ function hapusItemDariPopup() {
         localStorage.setItem(STORAGE_KEY_BEBAS, JSON.stringify(dataRakBebas));
         renderTabelRakBebas(dataRakBebas);
         tutupPopupBebas();
-        setupWorkspaceHeader("Rak Bebas / Customize", `${dataRakBebas.length} item tersimpan`, false, `<button onclick="exportExcelRakBebas()">📥 Download / Cetak</button>`);
+        setupWorkspaceHeader("Rak Bebas / Customize", `${dataRakBebas.length} item tersimpan`, true, `<button onclick="exportExcelRakBebas()">📥 Download / Cetak</button>`);
     }
 }
 
@@ -417,7 +475,7 @@ function konfirmasiResetRakBebas() {
         localStorage.removeItem(STORAGE_KEY_BEBAS);
         dataRakBebas = [];
         renderTabelRakBebas(dataRakBebas);
-        setupWorkspaceHeader("Rak Bebas / Customize", "Data direset", false, `<button onclick="exportExcelRakBebas()">📥 Download / Cetak</button>`);
+        setupWorkspaceHeader("Rak Bebas / Customize", "Data direset", true, `<button onclick="exportExcelRakBebas()">📥 Download / Cetak</button>`);
         alert("Rak Bebas berhasil dikosongkan!");
     }
 }
