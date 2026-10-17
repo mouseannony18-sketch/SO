@@ -11,7 +11,10 @@ async function loadMenu979() {
     container.style.minHeight = "100vh";
 
     container.innerHTML = `
-        <h3 style="font-size: 18px; margin-bottom: 5px;">Menu Rak 979 (Stock Opname)</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+            <h3 style="font-size: 18px; margin: 0;">Menu Rak 979 (Stock Opname)</h3>
+            <button onclick="sinkronisasiStokServer(true)" style="background: #2563eb; width: auto; padding: 6px 12px; font-size: 12px; margin: 0;" title="Perbarui stok sistem dari server">🔄 Sync Stok Server</button>
+        </div>
         <p id="statusLoad979" style="text-align: center; color: var(--text-muted); font-size: 12px; margin-bottom: 15px;">Memuat data master...</p>
         
         <div class="table-full-container">
@@ -73,12 +76,10 @@ function parseCSVData(text) {
         }
     }
 
-    // Cek apakah ada data Qty tersimpan sebelumnya di localStorage
     let savedLocalData = localStorage.getItem(STORAGE_KEY_979);
     if (savedLocalData) {
         try {
             let parsedLocal = JSON.parse(savedLocalData);
-            // Gabungkan nilai Qty & OH yang sudah pernah dihitung sebelumnya berdasarkan PLU/Barcode
             masterItems.forEach(master => {
                 let found = parsedLocal.find(p => p.plu === master.plu);
                 if (found) {
@@ -96,10 +97,10 @@ function parseCSVData(text) {
     renderTabel979();
     
     if (savedLocalData) {
-        document.getElementById('statusLoad979').innerText = `Memuat ${dataMenu979.length} item dari memori tersimpan (Auto-saved).`;
+        document.getElementById('statusLoad979').innerText = `Memuat ${dataMenu979.length} item dari memori tersimpan. Klik "Sync Stok Server" untuk memperbarui stok.`;
     } else {
         document.getElementById('statusLoad979').innerText = `Total ${dataMenu979.length} item dimuat. Menyinkronkan stok server...`;
-        sinkronisasiStokServer();
+        sinkronisasiStokServer(false);
     }
 }
 
@@ -154,18 +155,22 @@ function updateQtyManual(index, value) {
         selisihEl.style.color = "inherit";
     }
 
-    // Simpan otomatis ke localStorage setiap kali ada perubahan Qty
     localStorage.setItem(STORAGE_KEY_979, JSON.stringify(dataMenu979));
 }
 
-async function sinkronisasiStokServer() {
+// Fungsi sinkronisasi stok server (bisa dipanggil otomatis atau lewat tombol manual)
+async function sinkronisasiStokServer(isManual = false) {
     let savedToken = localStorage.getItem('apo_token');
     let isSkipped = localStorage.getItem('apo_skipped') === 'true';
 
     if (!savedToken || isSkipped) {
+        if (isManual) alert("Mode Tamu / Belum Login: Tidak dapat melakukan sinkronisasi server.");
         document.getElementById('statusLoad979').innerText = `Total ${dataMenu979.length} item dimuat. (Mode Tanpa Login / OH = 0)`;
         return;
     }
+
+    let statusEl = document.getElementById('statusLoad979');
+    statusEl.innerText = "Sedang menyinkronkan ulang stok sistem dari server...";
 
     let successCount = 0;
     for (let i = 0; i < dataMenu979.length; i++) {
@@ -185,6 +190,7 @@ async function sinkronisasiStokServer() {
             let result = await response.json();
             if (response.ok && result.success) {
                 item.oh = parseInt(result.systemStock) || 0;
+                // Hitung ulang selisih berdasarkan Qty fisik saat ini dan OH terbaru
                 item.selisih = item.qty - item.oh;
                 
                 let ohEl = document.getElementById(`oh-val-${i}`);
@@ -192,7 +198,11 @@ async function sinkronisasiStokServer() {
                 if (ohEl) ohEl.innerText = item.oh;
                 if (selisihEl) {
                     selisihEl.innerText = item.selisih;
-                    if (item.selisih !== 0) selisihEl.style.color = "#ef4444";
+                    if (item.selisih !== 0) {
+                        selisihEl.style.color = "#ef4444";
+                    } else {
+                        selisihEl.style.color = "inherit";
+                    }
                 }
                 successCount++;
             }
@@ -201,9 +211,12 @@ async function sinkronisasiStokServer() {
         }
     }
 
-    // Simpan pembaruan OH server ke localStorage
     localStorage.setItem(STORAGE_KEY_979, JSON.stringify(dataMenu979));
-    document.getElementById('statusLoad979').innerText = `Sinkronisasi selesai. Stok ${successCount} item diperbarui.`;
+    statusEl.innerText = `Sinkronisasi selesai! Berhasil memperbarui stok ${successCount} item dari server.`;
+    
+    if (isManual) {
+        alert(`Sinkronisasi Berhasil! Stok sistem untuk ${successCount} item telah diperbarui.`);
+    }
 }
 
 let hanyaSelisih = false;
