@@ -1,31 +1,55 @@
+/* Variabel Warna untuk Tema Gelap (Default) & Terang */
+:root {
+    --bg-main: #121212;
+    --card-bg: #1e1e1e;
+    --text-color: #f4f4f9;
+    --text-muted: #aaa;
+    --border-color: #333;
+    --header-bg: #1e1e1e;
+    --table-th: #2a2a2a;
+}
+
+body.light-mode {
+    --bg-main: #f7f8fa;
+    --card-bg: #ffffff;
+    --text-color: #333333;
+    --text-muted: #666666;
+    --border-color: #ddd;
+    --header-bg: #ffffff;
+    --table-th: #f1f3f5;
+}
+
 body { 
     font-family: system-ui, -apple-system, sans-serif; 
-    background: #f7f8fa; 
-    color: #333;
+    background: var(--bg-main); 
+    color: var(--text-color);
     padding: 0; 
     margin: 0; 
+    transition: background 0.3s, color 0.3s;
 }
+
 .card { 
-    background: white; 
-    color: #333;
+    background: var(--card-bg); 
+    color: var(--text-color);
     padding: 20px; 
     border-radius: 12px; 
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
     max-width: 400px; 
     margin: 40px auto; 
 }
-h3 { margin-top: 0; color: #222; text-align: center; }
+h3 { margin-top: 0; color: var(--text-color); text-align: center; }
 input, select, button { 
     width: 100%; 
     padding: 10px; 
     margin-top: 8px; 
     margin-bottom: 12px; 
     box-sizing: border-box; 
-    border: 1px solid #ddd; 
+    border: 1px solid var(--border-color); 
     border-radius: 6px; 
-    background: #fff;
-    color: #333;
+    background: var(--card-bg);
+    color: var(--text-color);
 }
+input::placeholder { color: #888; }
 button { 
     background: #0066cc; 
     color: white; 
@@ -36,22 +60,21 @@ button {
 button:hover { background: #0052a3; }
 .hidden { display: none; }
 
-/* Layout Utama (Header & Body Terpisah) */
+/* Layout Utama */
 .main-layout {
     max-width: 480px;
     margin: 0 auto;
     min-height: 100vh;
-    background: #f7f8fa;
+    background: var(--bg-main);
     display: flex;
     flex-direction: column;
 }
 
-/* 1. Styling Header */
+/* Header */
 .app-header-custom {
-    background: #ffffff;
+    background: var(--header-bg);
     padding: 16px 20px;
-    border-bottom: 1px solid #eaeaea;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    border-bottom: 1px solid var(--border-color);
 }
 .header-top-row {
     display: flex;
@@ -65,14 +88,28 @@ button:hover { background: #0052a3; }
     gap: 8px;
     font-weight: 700;
     font-size: 16px;
-    color: #111;
 }
-.app-logo {
-    font-size: 20px;
+.header-right-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
-.logout-link-btn {
-    background: #ff4d4d;
-    color: white;
+.theme-toggle-btn {
+    background: var(--border-color);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    width: auto;
+    margin: 0;
+    padding: 6px 10px;
+}
+.auth-action-btn {
     border: none;
     border-radius: 6px;
     padding: 6px 14px;
@@ -82,7 +119,9 @@ button:hover { background: #0052a3; }
     width: auto;
     margin: 0;
 }
-.logout-link-btn:hover { background: #e03b3b; }
+.logout-color { background: #ff4d4d; color: white; }
+.login-color { background: #28a745; color: white; }
+.auth-action-btn:hover { opacity: 0.9; }
 
 .header-welcome-box {
     display: flex;
@@ -93,20 +132,19 @@ button:hover { background: #0052a3; }
     margin: 0;
     font-size: 18px;
     font-weight: 700;
-    color: #1a1a1a;
 }
 .user-real-name {
     font-size: 14px;
     font-weight: 600;
-    color: #0066cc;
+    color: #4da6ff;
 }
 .store-real-name {
     font-size: 12px;
-    color: #666;
+    color: var(--text-muted);
     margin-top: 2px;
 }
 
-/* 2. Styling Body & Menu Kotak Bulat */
+/* Body & Menu Kotak Bulat */
 .app-body-content {
     padding: 24px 20px;
     flex: 1;
@@ -122,9 +160,7 @@ button:hover { background: #0052a3; }
     align-items: center;
     cursor: pointer;
 }
-.menu-box-item:active {
-    transform: scale(0.96);
-}
+.menu-box-item:active { transform: scale(0.96); }
 .icon-circle {
     width: 68px;
     height: 68px;
@@ -132,25 +168,22 @@ button:hover { background: #0052a3; }
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.2);
     margin-bottom: 6px;
-    border: 1px solid rgba(0,0,0,0.04);
+    border: 1px solid var(--border-color);
 }
-.bg-white-card { background: #ffffff; }
+.bg-card-custom { background: var(--card-bg); }
 .bg-red-card { background: #d93838; }
 .bg-blue-card { background: #2563eb; }
 
-.badge-text {
-    font-weight: 800;
-    font-size: 16px;
-}
-.badge-text.red { color: #dc2626; }
-.badge-text.blue { color: #2563eb; font-size: 14px; }
+.badge-text { font-weight: 800; font-size: 16px; }
+.badge-text.red { color: #ef4444; }
+.badge-text.blue { color: #38bdf8; font-size: 14px; }
 .symbol-icon { font-size: 24px; }
 
 .menu-title-label {
     font-size: 12px;
-    color: #4b5563;
+    color: var(--text-muted);
     text-align: center;
     font-weight: 600;
 }
@@ -162,14 +195,35 @@ table {
     margin-top: 10px; 
 }
 th, td { 
-    border: 1px solid #ddd; 
+    border: 1px solid var(--border-color); 
     padding: 8px; 
     font-size: 13px; 
     text-align: left; 
 }
-th { background: #f1f3f5; }
+th { background: var(--table-th); }
 .back-btn { background: #6c757d; margin-top: 15px; }
 .excel-btn { background: #28a745; margin-top: 15px; }
 .save-admin-btn { background: #28a745; }
 .admin-notice { font-size: 13px; color: #d9534f; text-align: center; }
-#statusLogin { text-align: center; font-size: 13px; color: #666; }
+#statusLogin { text-align: center; font-size: 13px; color: var(--text-muted); }
+
+/* Modal Popup Peringatan */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+.modal-box {
+    background: var(--card-bg);
+    padding: 25px;
+    border-radius: 12px;
+    max-width: 320px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+.modal-box h3 { margin-top: 0; color: #ff4d4d; }
+.modal-box p { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
