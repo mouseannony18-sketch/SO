@@ -10,10 +10,8 @@ let isFlashOnBebas = false;
 let statusFilterSelisihBebas = false;
 
 async function loadMenuRakBebas() {
-    // Atur header global workspace untuk Rak Bebas
     setupWorkspaceHeader("Rak Bebas / Customize", "Memuat item bebas...", false);
 
-    // Pastikan container menu bebas aktif
     let container = document.getElementById('workspaceCard');
     let menuBebasContainer = document.getElementById('menuBebasContainer');
     
@@ -24,7 +22,7 @@ async function loadMenuRakBebas() {
     }
     menuBebasContainer.classList.remove('hidden');
 
-    // Render layout UI yang persis seperti Rak 979
+    // Layout HTML DISAMAKAN PERSIS 100% seperti Menu 979
     menuBebasContainer.innerHTML = `
         <!-- BARIS 1: TOMBOL RESET & CEK SELISIH -->
         <div class="top-action-bar-row1">
@@ -32,7 +30,7 @@ async function loadMenuRakBebas() {
             <button onclick="filterSelisihToggleBebas()" id="btnCekSelisihBebas" class="action-top-btn selisih-btn">📊 Cek Selisih</button>
         </div>
 
-        <!-- BARIS 2: PENCARIAN & TAMBAH / SCAN BARCODE -->
+        <!-- BARIS 2: PENCARIAN 75% & TOMBOL SCAN 20% -->
         <div class="top-action-bar-row2">
             <div class="search-box-wrapper">
                 <span class="search-icon">🔍</span>
@@ -54,27 +52,24 @@ async function loadMenuRakBebas() {
             <div id="readerBebas"></div>
         </div>
 
-                    <!-- TABEL UTAMA RAK BEBAS -->
-            <div class="table-full-container">
-                <table id="tabelRakBebas">
-                    <thead>
-                        <tr>
-                            <th style="width: 40px;">#</th>
-                            <th style="width: 100px;">PLU / Barcode</th>
-                            <th>Nama Item</th>
-                            <th style="text-align: center; width: 100px;">QTY (Fisik)</th>
-                            <th style="text-align: center; width: 45px;">OH</th>
-                            <th style="text-align: center; width: 55px;">Selisih</th>
-                            <th style="text-align: center; width: 55px;">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbodyRakBebas"></tbody>
-                </table>
-            </div>
-
+        <!-- TABEL UTAMA PERSIS 100% SEPERTI 979 (Tanpa Kolom Aksi Terpisah) -->
+        <div class="table-full-container">
+            <table id="tabelRakBebas">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">#</th>
+                        <th>PLU / Barcode</th>
+                        <th>Nama Item</th>
+                        <th style="text-align: center; width: 110px;">QTY (Fisik)</th>
+                        <th style="text-align: center; width: 50px;">OH</th>
+                        <th style="text-align: center; width: 60px;">Selisih</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyRakBebas"></tbody>
+            </table>
+        </div>
     `;
 
-    // Sembunyikan form lain
     let soArea = document.getElementById('soFormArea');
     let adminArea = document.getElementById('adminFormArea');
     let menu979Container = document.getElementById('menu979Container');
@@ -82,14 +77,13 @@ async function loadMenuRakBebas() {
     if (adminArea) adminArea.classList.add('hidden');
     if (menu979Container) menu979Container.classList.add('hidden');
 
-    // Muat pustaka HTML5-QRCode jika belum ada
     if (!window.Html5Qrcode) {
         let scriptTag = document.createElement('script');
         scriptTag.src = "https://unpkg.com/html5-qrcode";
         document.head.appendChild(scriptTag);
     }
 
-    // Modal Pop-up Qty untuk Rak Bebas
+    // Modal Pop-up Qty disamakan dengan tambahan opsi hapus item jika diperlukan
     if (!document.getElementById('popupQtyModalBebas')) {
         let modalDiv = document.createElement('div');
         modalDiv.id = 'popupQtyModalBebas';
@@ -111,7 +105,7 @@ async function loadMenuRakBebas() {
                     <div class="modern-current-label">
                         Qty Tersimpan: <span id="modalCurrentQtyBebas">0</span>
                     </div>
-                    <label class="modern-input-label">Tambah Qty Fisik:</label>
+                    <label class="modern-input-label">Tambah / Ubah Qty Fisik:</label>
                     
                     <div class="modern-stepper-row">
                         <button onclick="ubahNilaiBebas(-1)" class="modern-step-btn">-</button>
@@ -120,16 +114,16 @@ async function loadMenuRakBebas() {
                     </div>
                 </div>
 
-                <div class="modern-btn-row">
+                <div class="modern-btn-row" style="margin-bottom: 8px;">
                     <button onclick="tutupPopupBebas()" class="modern-btn-batal">Batal</button>
                     <button onclick="simpanQtyBebas()" class="modern-btn-simpan">Simpan</button>
                 </div>
+                <button onclick="hapusItemDariPopup()" style="width: 100%; background: #dc2626; color: white; border: none; border-radius: 8px; padding: 8px; font-weight: bold; font-size: 12px; cursor: pointer;">🗑️ Hapus Item Ini dari Daftar</button>
             </div>
         `;
         document.body.appendChild(modalDiv);
     }
 
-    // Muat data lokal Rak Bebas
     muatDataLokalRakBebas();
 }
 
@@ -154,7 +148,7 @@ function renderTabelRakBebas(listData) {
     tbody.innerHTML = "";
 
     if (listData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 20px;">Belum ada item ditambahkan. Ketik barcode atau scan di atas.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 25px;">Belum ada item. Ketik Barcode/PLU lalu tekan Enter atau klik Scan.</td></tr>`;
         return;
     }
 
@@ -162,7 +156,7 @@ function renderTabelRakBebas(listData) {
         let realIndex = dataRakBebas.findIndex(d => d.barcode === item.barcode || d.plu === item.plu);
         let selisihWarna = item.selisih !== 0 ? "color: #ef4444; font-weight: bold;" : "";
 
-                let tr = document.createElement('tr');
+        let tr = document.createElement('tr');
         tr.innerHTML = `
             <td style="text-align: center; font-size: 12px;">${idx + 1}</td>
             <td style="font-size: 12px;"><b>${item.plu || '-'}</b><br><small style="color: var(--text-muted);">${item.barcode}</small></td>
@@ -175,16 +169,11 @@ function renderTabelRakBebas(listData) {
             </td>
             <td style="text-align: center; font-size: 13px;">${item.oh}</td>
             <td style="text-align: center; font-size: 13px; ${selisihWarna}">${item.selisih}</td>
-            <td style="text-align: center;">
-                <button onclick="hapusItemRakBebas(${realIndex})" style="background: #dc2626; color: white; border: none; border-radius: 4px; padding: 4px 6px; font-size: 10px; cursor: pointer;">Hapus</button>
-            </td>
         `;
-
         tbody.appendChild(tr);
     });
 }
 
-// Handler saat mengetik Barcode/PLU lalu tekan Enter
 async function handleKeyInputRakBebas(event, val) {
     if (event.key === 'Enter') {
         event.preventDefault();
@@ -228,9 +217,7 @@ function bersihkanPencarianBebas() {
     inputEl.focus();
 }
 
-// Fungsi utama menambah item baru berdasarkan Barcode / PLU
 async function tambahAtauCariItemRakBebas(code) {
-    // Cek apakah item sudah ada di daftar Rak Bebas
     let existing = dataRakBebas.find(d => d.barcode === code || d.plu === code);
     if (existing) {
         let idx = dataRakBebas.indexOf(existing);
@@ -238,7 +225,6 @@ async function tambahAtauCariItemRakBebas(code) {
         return;
     }
 
-    // Jika belum ada, panggil server /api/scan untuk mengambil nama & stok sistem (OH)
     let savedToken = localStorage.getItem('apo_token');
     let isSkipped = localStorage.getItem('apo_skipped') === 'true';
 
@@ -265,7 +251,6 @@ async function tambahAtauCariItemRakBebas(code) {
         }
     }
 
-    // Tambahkan item baru ke array
     let newItem = {
         no: dataRakBebas.length + 1,
         plu: pluVal,
@@ -279,12 +264,9 @@ async function tambahAtauCariItemRakBebas(code) {
     dataRakBebas.push(newItem);
     localStorage.setItem(STORAGE_KEY_BEBAS, JSON.stringify(dataRakBebas));
     renderTabelRakBebas(dataRakBebas);
-    
-    // Langsung buka popup Qty agar kasir bisa langsung input jumlah fisiknya
     bukaPopupBebas(dataRakBebas.length - 1);
 }
 
-// Scanner Kamera untuk Rak Bebas
 async function bukaScannerBebas() {
     let scannerBox = document.getElementById('scannerContainerBebas');
     scannerBox.classList.remove('hidden');
@@ -375,7 +357,6 @@ function tutupScannerBebas() {
     }
 }
 
-// Modal Pop-up Qty Logic
 function bukaPopupBebas(index) {
     currentBebasIndex = index;
     let item = dataRakBebas[index];
@@ -418,13 +399,14 @@ function simpanQtyBebas() {
     tutupPopupBebas();
 }
 
-function hapusItemRakBebas(index) {
+function hapusItemDariPopup() {
+    if (currentBebasIndex === null) return;
     if (confirm("Hapus item ini dari daftar Rak Bebas?")) {
-        dataRakBebas.splice(index, 1);
-        // Perbarui nomor urut (no)
+        dataRakBebas.splice(currentBebasIndex, 1);
         dataRakBebas.forEach((d, idx) => d.no = idx + 1);
         localStorage.setItem(STORAGE_KEY_BEBAS, JSON.stringify(dataRakBebas));
         renderTabelRakBebas(dataRakBebas);
+        tutupPopupBebas();
         setupWorkspaceHeader("Rak Bebas / Customize", `${dataRakBebas.length} item tersimpan`, false, `<button onclick="exportExcelRakBebas()">📥 Download / Cetak</button>`);
     }
 }
