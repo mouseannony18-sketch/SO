@@ -19,10 +19,12 @@ async function loadMenu979() {
             <button onclick="sinkronisasiStokServer(true)" style="background: #2563eb; width: auto; padding: 6px 12px; font-size: 12px; margin: 0;" title="Perbarui stok sistem dari server">🔄 Sync Server</button>
         </div>
         
+        <!-- PENCARIAN DENGAN TOMBOL CLEAR (X) & TOMBOL AKSI -->
         <div class="top-action-bar">
             <div class="search-box-wrapper">
                 <span class="search-icon">🔍</span>
-                <input type="text" id="inputCariItem" oninput="filterPencarianRealtime(this.value)" placeholder="Cari PLU / Barcode / Nama..." class="modern-search-input" />
+                <input type="text" id="inputCariItem" oninput="handlePencarianInput(this.value)" placeholder="Cari PLU / Barcode / Nama..." class="modern-search-input" />
+                <button id="btnClearSearch" onclick="bersihkanPencarian()" class="clear-search-btn hidden" title="Hapus pencarian">×</button>
             </div>
             <button onclick="bukaScannerKamera()" class="action-top-btn scan-btn" title="Scan Barcode via Kamera">📷 Scan</button>
             <button onclick="konfirmasiResetData()" class="action-top-btn reset-btn" title="Reset Semua Data Qty">🗑️ Reset</button>
@@ -30,7 +32,7 @@ async function loadMenu979() {
 
         <p id="statusLoad979" style="text-align: center; color: var(--text-muted); font-size: 12px; margin-bottom: 10px;">Memuat data master...</p>
         
-        <!-- AREA SCANNER KAMERA + KONTROL FLASH -->
+        <!-- AREA SCANNER KAMERA (KEMBALI KE KONFIGURASI NORMAL YG STABIL) -->
         <div id="scannerContainer" class="scanner-box hidden">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                 <b style="font-size: 12px; color: #38bdf8;">Arahkan Kamera ke Barcode</b>
@@ -201,6 +203,17 @@ function renderTabel979(listData) {
     });
 }
 
+// Logika Pencarian & Tombol Clear (X)
+function handlePencarianInput(val) {
+    let clearBtn = document.getElementById('btnClearSearch');
+    if (val.length > 0) {
+        clearBtn.classList.remove('hidden');
+    } else {
+        clearBtn.classList.add('hidden');
+    }
+    filterPencarianRealtime(val);
+}
+
 function filterPencarianRealtime(keyword) {
     let query = keyword.toLowerCase().trim();
     if (!query) {
@@ -217,7 +230,15 @@ function filterPencarianRealtime(keyword) {
     renderTabel979(filtered);
 }
 
-// Buka Kamera dengan Resolusi HD & Pemicu Auto-Fokus Berkelanjutan
+function bersihkanPencarian() {
+    let inputEl = document.getElementById('inputCariItem');
+    inputEl.value = "";
+    document.getElementById('btnClearSearch').classList.add('hidden');
+    renderTabel979(dataMenu979);
+    inputEl.focus();
+}
+
+// Buka Kamera dengan Konfigurasi Standar yang Stabil dan Pasti Terbuka
 function bukaScannerKamera() {
     let scannerBox = document.getElementById('scannerContainer');
     scannerBox.classList.remove('hidden');
@@ -228,23 +249,12 @@ function bukaScannerKamera() {
         html5QrCode = new Html5Qrcode("reader");
     }
 
-    // Memaksa resolusi HD dan mengaktifkan mode auto-fokus kontinu agar tidak blur
-    let constraintsConfig = {
-        audio: false,
-        video: {
-            facingMode: { ideal: "environment" },
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            advanced: [{ focusMode: "continuous" }]
-        }
-    };
-
+    // Menggunakan konfigurasi environment standar agar kompatibel di semua jenis browser HP
     html5QrCode.start(
-        constraintsConfig,
+        { facingMode: "environment" },
         { 
-            fps: 25, 
-            qrbox: { width: 280, height: 140 },
-            aspectRatio: 1.777778
+            fps: 15, 
+            qrbox: { width: 260, height: 140 }
         },
         (decodedText) => {
             tutupScannerKamera();
@@ -252,22 +262,8 @@ function bukaScannerKamera() {
         },
         (errorMessage) => {}
     ).catch(err => {
-        // Fallback konfigurasi jika pengaturan advanced ditolak browser
-        html5QrCode.start(
-            { facingMode: "environment" },
-            { 
-                fps: 25, 
-                qrbox: { width: 280, height: 140 } 
-            },
-            (decodedText) => {
-                tutupScannerKamera();
-                cariDanBukaItemDariBarcode(decodedText.trim());
-            },
-            (errorMessage) => {}
-        ).catch(fallbackErr => {
-            alert("Gagal mengaktifkan kamera: " + fallbackErr);
-            scannerBox.classList.add('hidden');
-        });
+        alert("Gagal mengaktifkan kamera: " + err);
+        scannerBox.classList.add('hidden');
     });
 }
 
@@ -319,8 +315,7 @@ function tutupScannerKamera() {
 function cariDanBukaItemDariBarcode(scannedBarcode) {
     let foundIndex = dataMenu979.findIndex(item => item.barcode === scannedBarcode);
     if (foundIndex !== -1) {
-        document.getElementById('inputCariItem').value = "";
-        renderTabel979(dataMenu979);
+        bersihkanPencarian();
         bukaPopupQty(foundIndex);
     } else {
         alert(`Barcode [${scannedBarcode}] tidak ditemukan di dalam Daftar Master Rak 979 ini.`);
