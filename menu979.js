@@ -217,7 +217,7 @@ function filterPencarianRealtime(keyword) {
     renderTabel979(filtered);
 }
 
-// Buka Kamera dengan Memaksa Kamera Utama (Normal / Belakang Utama)
+// Buka Kamera dengan Resolusi HD & Pemicu Auto-Fokus Berkelanjutan
 function bukaScannerKamera() {
     let scannerBox = document.getElementById('scannerContainer');
     scannerBox.classList.remove('hidden');
@@ -228,16 +228,22 @@ function bukaScannerKamera() {
         html5QrCode = new Html5Qrcode("reader");
     }
 
-    // Menggunakan exact constraints ke kamera belakang utama agar terhindar dari lensa wide/ultrawide
-    let cameraConfig = { 
-        facingMode: { exact: "environment" } 
+    // Memaksa resolusi HD dan mengaktifkan mode auto-fokus kontinu agar tidak blur
+    let constraintsConfig = {
+        audio: false,
+        video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            advanced: [{ focusMode: "continuous" }]
+        }
     };
 
     html5QrCode.start(
-        cameraConfig,
+        constraintsConfig,
         { 
-            fps: 15, 
-            qrbox: { width: 260, height: 140 },
+            fps: 25, 
+            qrbox: { width: 280, height: 140 },
             aspectRatio: 1.777778
         },
         (decodedText) => {
@@ -246,10 +252,13 @@ function bukaScannerKamera() {
         },
         (errorMessage) => {}
     ).catch(err => {
-        // Fallback jika exact environment ditolak browser, gunakan environment biasa
+        // Fallback konfigurasi jika pengaturan advanced ditolak browser
         html5QrCode.start(
             { facingMode: "environment" },
-            { fps: 15, qrbox: { width: 260, height: 140 } },
+            { 
+                fps: 25, 
+                qrbox: { width: 280, height: 140 } 
+            },
             (decodedText) => {
                 tutupScannerKamera();
                 cariDanBukaItemDariBarcode(decodedText.trim());
@@ -272,8 +281,8 @@ function toggleFlashLight() {
     }).then(() => {
         updateFlashButtonUI();
     }).catch(err => {
-        console.warn("Perangkat atau browser tidak mendukung kontrol Flash:", err);
-        isFlashOn = !isFlashOn; // Kembalikan status jika gagal
+        console.warn("Kontrol Flash tidak didukung:", err);
+        isFlashOn = !isFlashOn;
         alert("Fitur Flash (Senter) tidak didukung pada perangkat/browser ini.");
     });
 }
@@ -282,11 +291,11 @@ function updateFlashButtonUI() {
     let btn = document.getElementById('flashToggleBtn');
     if (!btn) return;
     if (isFlashOn) {
-        btn.style.background = "#eab308"; // Kuning menyala
+        btn.style.background = "#eab308";
         btn.style.color = "#000";
         btn.innerText = "⚡ Flash: ON";
     } else {
-        btn.style.background = "#4b5563"; // Abu-abu
+        btn.style.background = "#4b5563";
         btn.style.color = "#fff";
         btn.innerText = "⚡ Flash: OFF";
     }
@@ -297,7 +306,6 @@ function tutupScannerKamera() {
     scannerBox.classList.add('hidden');
 
     if (html5QrCode && html5QrCode.isScanning) {
-        // Matikan flash sebelum menutup kamera
         if (isFlashOn) {
             html5QrCode.applyVideoConstraints({ advanced: [{ torch: false }] }).catch(() => {});
             isFlashOn = false;
