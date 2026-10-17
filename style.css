@@ -434,3 +434,87 @@ th { background: var(--table-th); }
     font-weight: 700 !important;
     border-radius: 8px !important;
 }
+
+/* (Pencarian, Scan, Reset) */
+.top-action-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.search-box-wrapper {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    left: 10px;
+    font-size: 14px;
+    pointer-events: none;
+}
+
+.modern-search-input {
+    width: 100% !important;
+    height: 38px !important;
+    padding: 4px 8px 4px 34px !important;
+    margin: 0 !important;
+    font-size: 13px !important;
+    border-radius: 8px !important;
+    border: 1px solid var(--border-color) !important;
+    background: var(--card-bg) !important;
+    color: var(--text-color) !important;
+}
+
+.action-top-btn {
+    height: 38px !important;
+    padding: 0 12px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    border-radius: 8px !important;
+    border: none !important;
+    cursor: pointer !important;
+    margin: 0 !important;
+    width: auto !important;
+    flex-shrink: 0;
+}
+
+.scan-btn {
+    background: #059669 !important;
+    color: white !important;
+}
+
+.reset-btn {
+    background: #dc2626 !important;
+    color: white !important;
+}
+
+/* Kotak Scanner Kamera */
+.scanner-box {
+    background: rgba(0,0,0,0.85);
+    border: 1px solid #38bdf8;
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 12px;
+}
+
+#reader {
+    width: 100% !important;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.close-scanner-btn {
+    background: #4b5563 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 4px !important;
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+    width: auto !important;
+    margin: 0 !important;
+    cursor: pointer;
+}
