@@ -1,20 +1,23 @@
+/* Gaya Dasar Tema Gelap */
 body { 
     font-family: sans-serif; 
-    background: #f4f4f9; 
-    padding: 20px; 
+    background: #121212; 
+    color: #f4f4f9;
+    padding: 10px; 
     margin: 0; 
 }
 .card { 
-    background: white; 
+    background: #1e1e1e; 
+    color: #fff;
     padding: 20px; 
-    border-radius: 8px; 
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+    border-radius: 12px; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
     max-width: 400px; 
     margin: 20px auto; 
 }
 h3 { 
     margin-top: 0; 
-    color: #333; 
+    color: #fff; 
     text-align: center; 
 }
 input, select, button { 
@@ -23,9 +26,12 @@ input, select, button {
     margin-top: 8px; 
     margin-bottom: 12px; 
     box-sizing: border-box; 
-    border: 1px solid #ccc; 
-    border-radius: 4px; 
+    border: 1px solid #444; 
+    border-radius: 6px; 
+    background: #2a2a2a;
+    color: #fff;
 }
+input::placeholder { color: #888; }
 button { 
     background: #007bff; 
     color: white; 
@@ -33,78 +39,146 @@ button {
     font-weight: bold; 
     cursor: pointer; 
 }
-button:hover { 
-    background: #0056b3; 
+button:hover { background: #0056b3; }
+.hidden { display: none; }
+
+/* Header & Tampilan Utama Ala Aplikasi Mobile */
+.app-container {
+    max-width: 450px;
+    margin: 0 auto;
+    padding: 10px;
 }
-.hidden { 
-    display: none; 
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #1e1e1e;
+    padding: 12px 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
 }
+.header-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: bold;
+    font-size: 16px;
+}
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.icon-btn {
+    background: #2a2a2a;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    margin: 0;
+    padding: 0;
+}
+.logout-top-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    width: auto;
+    margin: 0;
+}
+
+/* Banner Sambutan */
+.welcome-banner {
+    text-align: center;
+    margin-bottom: 25px;
+}
+.welcome-banner h2 {
+    margin: 0 0 5px 0;
+    font-size: 20px;
+    color: #ffd700;
+}
+.welcome-banner p {
+    margin: 0;
+    font-size: 13px;
+    color: #aaa;
+}
+.nik-info {
+    font-size: 11px;
+    color: #4CAF50 !important;
+    margin-top: 4px !important;
+}
+
+/* Grid Menu Kotak Bulat */
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    padding: 10px;
+}
+.menu-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.menu-item:active {
+    transform: scale(0.95);
+}
+.menu-icon-box {
+    width: 75px;
+    height: 75px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    margin-bottom: 6px;
+}
+.bg-white { background: #ffffff; }
+.bg-red { background: #c62828; }
+.bg-blue { background: #1976d2; }
+
+.menu-text-badge {
+    font-weight: 900;
+    font-size: 18px;
+}
+.menu-text-badge.red { color: #d32f2f; }
+.menu-text-badge.blue { color: #0288d1; font-size: 16px; }
+.menu-icon-symbol { font-size: 28px; }
+
+.menu-label {
+    font-size: 13px;
+    color: #e0e0e0;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* Tabel dan Tombol Workspace */
 table { 
     width: 100%; 
     border-collapse: collapse; 
     margin-top: 10px; 
 }
 th, td { 
-    border: 1px solid #ddd; 
+    border: 1px solid #444; 
     padding: 8px; 
     font-size: 13px; 
     text-align: left; 
+    color: #fff;
 }
-th { 
-    background: #f8f9fa; 
-}
-.menu-btn { 
-    background: #17a2b8; 
-    margin-bottom: 10px; 
-    font-size: 15px; 
-    padding: 12px; 
-}
-.menu-btn:hover { 
-    background: #138496; 
-}
-.admin-menu {
-    background: #ffc107; 
-    color: #333;
-}
-.admin-menu:hover {
-    background: #e0a800;
-}
-.back-btn { 
-    background: #6c757d; 
-    margin-top: 10px; 
-}
-.back-btn:hover { 
-    background: #5a6268; 
-}
-.logout-btn { 
-    background: #dc3545; 
-    margin-top: 10px; 
-}
-.logout-btn:hover { 
-    background: #c82333; 
-}
-.excel-btn {
-    background: #28a745; 
-    margin-top: 15px;
-}
-.excel-btn:hover {
-    background: #218838;
-}
-.save-admin-btn {
-    background: #28a745;
-}
-.status-active {
-    font-size: 12px; 
-    color: green; 
-    text-align: center;
-}
-.admin-notice {
-    font-size: 13px; 
-    color: #d9534f; 
-    text-align: center;
-}
-#statusLogin {
-    text-align: center; 
-    font-size: 13px; 
-    color: #666;
-}
+th { background: #2a2a2a; }
+
+.back-btn { background: #6c757d; margin-top: 15px; }
+.excel-btn { background: #28a745; margin-top: 15px; }
+.save-admin-btn { background: #28a745; }
+.admin-notice { font-size: 13px; color: #ff6b6b; text-align: center; }
+#statusLogin { text-align: center; font-size: 13px; color: #aaa; }
