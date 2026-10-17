@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Opname Mobile</title>
+    <!-- SheetJS via CDN untuk export Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #f4f4f9; padding: 20px; margin: 0; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 400px; margin: 20px auto; }
+        h3, h4 { margin-top: 0; color: #333; text-align: center; }
+        input, select, button { width: 100%; padding: 10px; margin-top: 8px; margin-bottom: 12px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #007bff; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .hidden { display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; font-size: 13px; text-align: left; }
+        th { background: #f8f9fa; }
+        .menu-btn { background: #17a2b8; margin-bottom: 10px; font-size: 15px; padding: 12px; }
+        .menu-btn:hover { background: #138496; }
+        .back-btn { background: #6c757d; margin-top: 10px; }
+        .back-btn:hover { background: #5a6268; }
+        .logout-btn { background: #dc3545; margin-top: 10px; }
+        .logout-btn:hover { background: #c82333; }
+    </style>
+</head>
+<body>
+
+    <!-- KARTU LOGIN -->
+    <div class="card" id="loginCard">
+        <h3>Login Sistem</h3>
+        <label>NIK:</label>
+        <input type="text" id="nik" placeholder="Masukkan NIK...">
+        
+        <label>PIN:</label>
+        <input type="password" id="pin" placeholder="Masukkan PIN...">
+
+        <label>OTP:</label>
+        <input type="text" id="otp" placeholder="Masukkan OTP...">
+
+        <button onclick="prosesLogin()">Masuk / Ambil Token</button>
+        <p id="statusLogin" style="text-align: center; font-size: 13px; color: #666;"></p>
+    </div>
+
+    <!-- KARTU MENU UTAMA (4 MENU) -->
+    <div class="card hidden" id="mainMenuCard">
+        <h3>Menu Utama Stock Opname</h3>
+        <p style="font-size: 12px; color: green; text-align: center;">Sesi Aktif (NIK: <span id="userNikText"></span>)</p>
+        
+        <button class="menu-btn" onclick="pilihMenu('979')">1. Menu 979</button>
+        <button class="menu-btn" onclick="pilihMenu('partial')">2. Partial / Reguler</button>
+        <button class="menu-btn" onclick="pilihMenu('bebas')">3. Rak Bebas / Customize</button>
+        <button class="menu-btn" style="background: #ffc107; color: #333;" onclick="pilihMenu('admin')">4. Tambah Item Inventory (Admin)</button>
+
+        <button onclick="logout()" class="logout-btn">Keluar / Reset Sesi</button>
+    </div>
+
+    <!-- KARTU FORM / WORKSPACE MASING-MASING MENU -->
+    <div class="card hidden" id="workspaceCard">
+        <h3 id="judulMenuAktif">Workspace</h3>
+        
+        <!-- Area Input Standar untuk SO (Menu 1, 2, 3) -->
+        <div id="soFormArea">
+            <label>Barcode / Kode Barang:</label>
+            <input type="text" id="kodeBarang" placeholder="Scan atau ketik kode...">
+            
+            <label>Qty Hitung (Fisik):</label>
+            <input type="number" id="qtyFisik" placeholder="Jumlah fisik...">
+
+            <button onclick="tambahData()">Tambah ke Daftar</button>
+
+            <table id="tabelSO">
+                <thead>
+                    <tr>
+                        <th>Barang / Deskripsi</th>
+                        <th>Qty Hitung</th>
+                        <th>Stok Sistem</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+
+            <button onclick="exportExcel()" style="background: #28a745; margin-top: 15px;">Download Excel (.xlsx)</button>
+        </div>
+
+        <!-- Area Khusus Menu 4 (Tambah Item Inventory - Admin) -->
+        <div id="adminFormArea" class="hidden">
+            <p style="font-size: 13px; color: #d9534f; text-align: center;"><b>Mode Khusus Admin:</b> Pendaftaran Item Inventory Baru</p>
+            <label>Kode / Barcode:</label>
+            <input type="text" id="admBarcode" placeholder="Kode barcode baru...">
+            <label>Nama / Deskripsi Barang:</label>
+            <input type="text" id="admNama" placeholder="Nama barang...">
+            <label>Kategori / Keterangan:</label>
+            <input type="text" id="admKet" placeholder="Keterangan...">
+            
+            <button onclick="simpanItemAdmin()" style="background: #28a745;">Simpan Item Baru</button>
+        </div>
+
+        <button onclick="kembaliKeMenu()" class="back-btn">Kembali ke Menu Utama</button>
+    </div>
+
+    <script>
+        let tokenGlobal = "";
+        let dataSO = [];
+        let menuAktif = "";
+        let currentNik = "";
+
+        window.onload = function() {
+            let savedToken = localStorage.getItem('apo_token');
+            let savedNik = localStorage.getItem('apo_nik');
+            if (savedToken && savedNik) {
+                tokenGlobal = savedToken;
+                currentNik = savedNik;
+                document.getElementById('userNikText').innerText = currentNik;
+                document.getElementById('loginCard').classList.add('hidden');
+                document.getElementById('mainMenuCard').classList.remove('hidden');
+            }
+        };
+
+        async function prosesLogin() {
+            let nik = document.getElementById('nik').value.trim();
+            let pin = document.getElementById('pin').value;
+            let otp = document.getElementById('otp').value;
+            let status = document.getElementById('statusLogin');
+
+            if(!nik || !pin || !otp) {
+                alert('Semua kolom harus diisi!');
+                return;
+            }
+
+            status.innerText = "Mendeteksi perangkat & menghubungi server...";
+
+            let userAgentAsli = navigator.userAgent;
+            let deviceModelAsli = "Android Device";
+            let match = userAgentAsli.match(/\(([^)]+)\)/);
+            if (match && match[1]) {
+                let parts = match[1].split(';');
+                for (let part of parts) {
+                    part = part.trim();
+                    if (part.includes('Build/') || part.length > 3 && !part.startsWith('Android') && !part.startsWith('iPhone') && !part.startsWith('Linux')) {
+                        deviceModelAsli = part.split(' Build/')[0].trim();
+                        break;
+                    }
+                }
+            }
+
+            try {
+                let response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        nik, 
+                        pin, 
+                        otp, 
+                        userAgent: userAgentAsli, 
+                        deviceModel: deviceModelAsli 
+                    })
+                });
+
+                let result = await response.json();
+
+                if(response.ok && result.success) {
+                    tokenGlobal = result.token;
+                    currentNik = nik;
+                    
+                    localStorage.setItem('apo_token', tokenGlobal);
+                    localStorage.setItem('apo_nik', currentNik);
+
+                    document.getElementById('userNikText').innerText = currentNik;
+                    document.getElementById('loginCard').classList.add('hidden');
+                    document.getElementById('mainMenuCard').classList.remove('hidden');
+                } else {
+                    status.innerText = "Gagal: " + (result.message || "Autentikasi ditolak");
+                }
+            } catch (error) {
+                status.innerText = "Terjadi kesalahan jaringan.";
+                console.error(error);
+            }
+        }
+
+        function pilihMenu(jenis) {
+            menuAktif = jenis;
+            document.getElementById('mainMenuCard').classList.add('hidden');
+            document.getElementById('workspaceCard').classList.remove('hidden');
+
+            let judul = "";
+            if (jenis === '979') {
+                judul = "Menu 979 (Stock Opname)";
+                bukaAreaSO();
+            } else if (jenis === 'partial') {
+                judul = "Partial / Reguler SO";
+                bukaAreaSO();
+            } else if (jenis === 'bebas') {
+                judul = "Rak Bebas / Customize";
+                bukaAreaSO();
+            } else if (jenis === 'admin') {
+                // Validasi khusus admin (bisa dikondisikan NIK tertentu atau hak akses)
+                // Contoh: untuk sementara kita beri verifikasi NIK atau password admin
+                let passwordAdmin = prompt("Masukkan PIN/Sandi khusus Admin:");
+                if (passwordAdmin === "admin123") { // Ganti sandi admin sesuai kebutuhan
+                    judul = "Tambah Item Inventory (Admin)";
+                    bukaAreaAdmin();
+                } else {
+                    alert("Akses ditolak! Sandi admin salah.");
+                    kembaliKeMenu();
+                    return;
+                }
+            }
+            document.getElementById('judulMenuAktif').innerText = judul;
+        }
+
+        function bukaAreaSO() {
+            document.getElementById('soFormArea').classList.remove('hidden');
+            document.getElementById('adminFormArea').classList.add('hidden');
+        }
+
+        function bukaAreaAdmin() {
+            document.getElementById('soFormArea').classList.add('hidden');
+            document.getElementById('adminFormArea').classList.remove('hidden');
+        }
+
+        function kembaliKeMenu() {
+            document.getElementById('workspaceCard').classList.add('hidden');
+            document.getElementById('mainMenuCard').classList.remove('hidden');
+        }
+
+        async function tambahData() {
+            let kode = document.getElementById('kodeBarang').value.trim();
+            let qtyFisik = document.getElementById('qtyFisik').value;
+
+            if(!kode || !qtyFisik) {
+                alert('Isi kode barcode dan qty hitung fisik dengan benar!');
+                return;
+            }
+
+            let savedToken = localStorage.getItem('apo_token');
+            if (!savedToken) {
+                alert('Sesi habis, silakan login ulang.');
+                logout();
+                return;
+            }
+
+            let btnTambah = event.target;
+            let originalText = btnTambah.innerText;
+            btnTambah.innerText = "Memeriksa...";
+            btnTambah.disabled = true;
+
+            try {
+                let response = await fetch('/api/scan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        barcode: kode, 
+                        token: savedToken 
+                    })
+                });
+
+                let result = await response.json();
+
+                if (response.ok && result.success) {
+                    let namaBarang = result.productName;
+                    let stokSistem = result.systemStock;
+                    
+                    dataSO.push({ 
+                        Menu: menuAktif,
+                        Barcode: kode, 
+                        Deskripsi: namaBarang, 
+                        Qty_Hitung: qtyFisik, 
+                        Stok_Sistem: stokSistem 
+                    });
+
+                    let tbody = document.querySelector('#tabelSO tbody');
+                    let tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><b>${kode}</b><br><small style="color:#555;">${namaBarang}</small></td>
+                        <td style="text-align: center; font-weight: bold; color: #007bff;">${qtyFisik}</td>
+                        <td style="text-align: center; color: #555;">${stokSistem}</td>
+                    `;
+                    tbody.appendChild(tr);
+
+                    document.getElementById('kodeBarang').value = '';
+                    document.getElementById('qtyFisik').value = '';
+                    document.getElementById('kodeBarang').focus();
+                } else {
+                    alert("Gagal memuat barang: " + (result.message || "Barang tidak ditemukan"));
+                }
+
+            } catch (error) {
+                console.error(error);
+                alert("Terjadi kesalahan jaringan saat memindai barang.");
+            } finally {
+                btnTambah.innerText = originalText;
+                btnTambah.disabled = false;
+            }
+        }
+
+        function simpanItemAdmin() {
+            let barcode = document.getElementById('admBarcode').value.trim();
+            let nama = document.getElementById('admNama').value.trim();
+            let ket = document.getElementById('admKet').value.trim();
+
+            if(!barcode || !nama) {
+                alert('Barcode dan Nama Barang wajib diisi!');
+                return;
+            }
+
+            // Simulasi penyimpanan item baru database/local
+            alert(`Sukses! Item baru [${barcode}] - ${nama} berhasil didaftarkan ke sistem.`);
+            document.getElementById('admBarcode').value = '';
+            document.getElementById('admNama').value = '';
+            document.getElementById('admKet').value = '';
+        }
+
+        function exportExcel() {
+            if(dataSO.length === 0) return alert('Belum ada data!');
+            let ws = XLSX.utils.json_to_sheet(dataSO);
+            let wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "StockOpname_" + menuAktif);
+            XLSX.writeFile(wb, `StockOpname_${menuAktif}_Hasil.xlsx`);
+        }
+
+        function logout() {
+            localStorage.removeItem('apo_token');
+            localStorage.removeItem('apo_nik');
+            tokenGlobal = "";
+            currentNik = "";
+            document.getElementById('workspaceCard').classList.add('hidden');
+            document.getElementById('mainMenuCard').classList.add('hidden');
+            document.getElementById('loginCard').classList.remove('hidden');
+            document.getElementById('nik').value = '';
+            document.getElementById('pin').value = '';
+            document.getElementById('otp').value = '';
+            document.getElementById('statusLogin').innerText = '';
+        }
+    </script>
+</body>
+</html>
