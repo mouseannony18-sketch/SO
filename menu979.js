@@ -1,26 +1,29 @@
-// Konfigurasi Link CSV Spreadsheet Rak 979
 const CSV_URL = "https://docs.google.com/spreadsheets/d/15Albul63206zfgQ8vaa0krgcoryLURf2xEGv3K-UueI/export?format=csv";
 
 let dataMenu979 = [];
 
-// Fungsi utama yang dipanggil saat Menu 979 dibuka
 async function loadMenu979() {
     let container = document.getElementById('workspaceCard');
+    // Membuat card workspace menjadi full width/screen khusus menu 979
+    container.style.maxWidth = "100%";
+    container.style.margin = "0";
+    container.style.borderRadius = "0";
+    container.style.minHeight = "100vh";
+
     container.innerHTML = `
-        <h3>Menu Rak 979 (Stock Opname)</h3>
-        <p id="statusLoad979" style="text-align: center; color: var(--text-muted); font-size: 13px;">Sedang memuat data master dari Spreadsheet...</p>
+        <h3 style="font-size: 18px; margin-bottom: 5px;">Menu Rak 979 (Stock Opname)</h3>
+        <p id="statusLoad979" style="text-align: center; color: var(--text-muted); font-size: 12px; margin-bottom: 15px;">Sedang memuat data master dari Spreadsheet...</p>
         
-        <div style="overflow-x: auto; max-height: 450px; margin-top: 10px;">
+        <div class="table-full-container">
             <table id="tabelMenu979">
                 <thead>
                     <tr>
-                        <th>#</th>
-                        <th>PLU</th>
-                        <th>Barcode</th>
+                        <th style="width: 40px;">#</th>
+                        <th>PLU / Barcode</th>
                         <th>Nama Item</th>
-                        <th style="text-align: center;">QTY</th>
-                        <th style="text-align: center;">OH</th>
-                        <th style="text-align: center;">Selisih</th>
+                        <th style="text-align: center; width: 130px;">QTY (Fisik)</th>
+                        <th style="text-align: center; width: 50px;">OH</th>
+                        <th style="text-align: center; width: 60px;">Selisih</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -28,34 +31,30 @@ async function loadMenu979() {
         </div>
 
         <div style="display: flex; gap: 10px; margin-top: 15px;">
-            <button onclick="exportExcel979()" class="excel-btn" style="flex: 1; margin:0;">Download Excel</button>
-            <button onclick="filterSelisih979()" style="background: #f59e0b; flex: 1; margin:0;">Filter Selisih</button>
+            <button onclick="exportExcel979()" class="excel-btn" style="flex: 1; margin:0; padding: 12px;">Download Excel</button>
+            <button onclick="filterSelisih979()" style="background: #f59e0b; flex: 1; margin:0; padding: 12px;">Filter Selisih</button>
         </div>
-        <button onclick="kembaliKeMenu()" class="back-btn">Kembali ke Menu Utama</button>
+        <button onclick="kembaliKeMenu()" class="back-btn" style="padding: 12px;">Kembali ke Menu Utama</button>
     `;
 
     try {
         let response = await fetch(CSV_URL);
         let csvText = await response.text();
-        
         parseCSVData(csvText);
     } catch (error) {
         console.error(error);
-        document.getElementById('statusLoad979').innerText = "Gagal memuat data spreadsheet. Periksa koneksi atau link publish.";
+        document.getElementById('statusLoad979').innerText = "Gagal memuat data spreadsheet.";
     }
 }
 
-// Memproses teks CSV menjadi array objek
 function parseCSVData(text) {
     let lines = text.split("\n");
     dataMenu979 = [];
 
-    // Mulai dari baris 1 (mengabaikan baris ke-0 jika header: PLU, Barcode, NamaItem)
     for (let i = 1; i < lines.length; i++) {
         let line = lines[i].trim();
         if (!line) continue;
 
-        // Mengatasi koma di dalam teks (menggunakan regex CSV parser sederhana)
         let row = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
         let plu = row[0] ? row[0].replace(/"/g, '').trim() : "";
         let barcode = row[1] ? row[1].replace(/"/g, '').trim() : "-";
@@ -77,11 +76,9 @@ function parseCSVData(text) {
     renderTabel979();
     document.getElementById('statusLoad979').innerText = `Total ${dataMenu979.length} item dimuat. Menyinkronkan stok server...`;
     
-    // Sinkronisasi stok sistem (OH) secara latar belakang
     sinkronisasiStokServer();
 }
 
-// Render tabel ke HTML
 function renderTabel979() {
     let tbody = document.querySelector('#tabelMenu979 tbody');
     tbody.innerHTML = "";
@@ -89,49 +86,58 @@ function renderTabel979() {
     dataMenu979.forEach((item, index) => {
         let tr = document.createElement('tr');
         tr.innerHTML = `
-            <td style="text-align: center;">${item.no}</td>
-            <td><b>${item.plu}</b></td>
-            <td><small>${item.barcode}</small></td>
-            <td>${item.namaItem}</td>
+            <td style="text-align: center; font-size: 12px;">${item.no}</td>
+            <td style="font-size: 12px;"><b>${item.plu}</b><br><small style="color: var(--text-muted);">${item.barcode}</small></td>
+            <td style="font-size: 12px;">${item.namaItem}</td>
             <td style="text-align: center; white-space: nowrap;">
-                <button onclick="ubahQty(${index}, -1)" style="padding: 2px 6px; width: auto; background: #dc3545; margin:0;">-</button>
-                <span id="qty-val-${index}" style="margin: 0 8px; font-weight: bold;">${item.qty}</span>
-                <button onclick="ubahQty(${index}, 1)" style="padding: 2px 6px; width: auto; background: #28a745; margin:0;">+</button>
+                <div class="qty-control-group">
+                    <button onclick="ubahQty(${index}, -1)" class="qty-btn-adjust">-</button>
+                    <input type="number" id="qty-input-${index}" value="${item.qty}" onchange="updateQtyManual(${index}, this.value)" class="qty-input-box" />
+                    <button onclick="ubahQty(${index}, 1)" class="qty-btn-adjust">+</button>
+                </div>
             </td>
-            <td style="text-align: center;" id="oh-val-${index}">${item.oh}</td>
-            <td style="text-align: center; font-weight: bold;" id="selisih-val-${index}">${item.selisih}</td>
+            <td style="text-align: center; font-size: 13px;" id="oh-val-${index}">${item.oh}</td>
+            <td style="text-align: center; font-size: 13px; font-weight: bold;" id="selisih-val-${index}">${item.selisih}</td>
         `;
         tbody.appendChild(tr);
     });
 }
 
-// Fungsi mengubah QTY fisik dengan tombol + / -
+// Tombol +/- untuk penyesuaian cepat
 function ubahQty(index, delta) {
-    dataMenu979[index].qty += delta;
-    if (dataMenu979[index].qty < 0) dataMenu979[index].qty = 0;
+    let inputEl = document.getElementById(`qty-input-${index}`);
+    let val = parseInt(inputEl.value) || 0;
+    val += delta;
+    if (val < 0) val = 0;
 
-    // Hitung ulang selisih: QTY Fisik - Stok Sistem (OH)
+    inputEl.value = val;
+    updateQtyManual(index, val);
+}
+
+// Update Qty saat diketik manual atau diubah lewat tombol
+function updateQtyManual(index, value) {
+    let val = parseInt(value) || 0;
+    if (val < 0) val = 0;
+
+    dataMenu979[index].qty = val;
     dataMenu979[index].selisih = dataMenu979[index].qty - dataMenu979[index].oh;
 
-    // Perbarui tampilan teks di tabel secara instan tanpa reload ulang seluruh tabel
-    document.getElementById(`qty-val-${index}`).innerText = dataMenu979[index].qty;
     let selisihEl = document.getElementById(`selisih-val-${index}`);
     selisihEl.innerText = dataMenu979[index].selisih;
     
     if (dataMenu979[index].selisih !== 0) {
-        selisihEl.style.color = "#ef4444"; // Merah jika ada selisih
+        selisihEl.style.color = "#ef4444";
     } else {
         selisihEl.style.color = "inherit";
     }
 }
 
-// Sinkronisasi otomatis stok server (OH) untuk item yang memiliki barcode valid
 async function sinkronisasiStokServer() {
     let savedToken = localStorage.getItem('apo_token');
     let isSkipped = localStorage.getItem('apo_skipped') === 'true';
 
     if (!savedToken || isSkipped) {
-        document.getElementById('statusLoad979').innerText = `Total ${dataMenu979.length} item dimuat. (Mode Tanpa Login / Sinkronisasi OH = 0)`;
+        document.getElementById('statusLoad979').innerText = `Total ${dataMenu979.length} item dimuat. (Mode Tamu / OH = 0)`;
         return;
     }
 
@@ -139,7 +145,6 @@ async function sinkronisasiStokServer() {
     for (let i = 0; i < dataMenu979.length; i++) {
         let item = dataMenu979[i];
         
-        // Jika barcode kosong atau tanda "-", lewati pengecekan server
         if (!item.barcode || item.barcode === "-") {
             continue;
         }
@@ -156,7 +161,6 @@ async function sinkronisasiStokServer() {
                 item.oh = parseInt(result.systemStock) || 0;
                 item.selisih = item.qty - item.oh;
                 
-                // Update tampilan baris tersebut
                 let ohEl = document.getElementById(`oh-val-${i}`);
                 let selisihEl = document.getElementById(`selisih-val-${i}`);
                 if (ohEl) ohEl.innerText = item.oh;
@@ -171,10 +175,9 @@ async function sinkronisasiStokServer() {
         }
     }
 
-    document.getElementById('statusLoad979').innerText = `Sinkronisasi selesai. Berhasil memperbarui stok ${successCount} item dari server.`;
+    document.getElementById('statusLoad979').innerText = `Sinkronisasi selesai. Berhasil memperbarui stok ${successCount} item.`;
 }
 
-// Tombol Filter khusus item yang berselisih
 let hanyaSelisih = false;
 function filterSelisih979() {
     hanyaSelisih = !hanyaSelisih;
@@ -191,7 +194,6 @@ function filterSelisih979() {
     }
 }
 
-// Ekspor ke Excel (.xlsx) khusus Rak 979
 function exportExcel979() {
     if (dataMenu979.length === 0) return alert('Belum ada data!');
     
