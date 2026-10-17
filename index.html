@@ -7,7 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="dark-mode"> <!-- Default menggunakan tema gelap -->
 
     <!-- KARTU LOGIN -->
     <div class="card" id="loginCard">
@@ -35,7 +35,11 @@
                     <span class="app-logo">📦</span>
                     <span class="app-name">Stock Opname</span>
                 </div>
-                <button class="logout-link-btn" onclick="logout()">Keluar</button>
+                <div class="header-right-actions">
+                    <button class="theme-toggle-btn" onclick="toggleTheme()" title="Ubah Tema">🌙</button>
+                    <!-- Tombol ini otomatis berubah jadi Login jika sesi habis -->
+                    <button class="auth-action-btn logout-color" id="authBtn" onclick="handleAuthAction()">Keluar</button>
+                </div>
             </div>
 
             <div class="header-welcome-box">
@@ -49,14 +53,14 @@
         <main class="app-body-content">
             <div class="menu-grid-custom">
                 <div class="menu-box-item" onclick="pilihMenu('979')">
-                    <div class="icon-circle bg-white-card">
+                    <div class="icon-circle bg-card-custom">
                         <span class="badge-text red">979</span>
                     </div>
                     <span class="menu-title-label">RAK 979</span>
                 </div>
 
                 <div class="menu-box-item" onclick="pilihMenu('bebas')">
-                    <div class="icon-circle bg-white-card">
+                    <div class="icon-circle bg-card-custom">
                         <span class="badge-text blue">FREE</span>
                     </div>
                     <span class="menu-title-label">Rak Bebas</span>
@@ -120,6 +124,15 @@
         </div>
 
         <button onclick="kembaliKeMenu()" class="back-btn">Kembali ke Menu Utama</button>
+    </div>
+
+    <!-- MODAL POPUP PERINGATAN SESI HABIS -->
+    <div id="sessionModal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <h3>⚠️ Sesi Berakhir / Belum Login</h3>
+            <p>Maaf, sesi Anda telah habis atau Anda belum melakukan login. Stok dan data tidak dapat dimuat.</p>
+            <button onclick="tutupModalLogin()">Login Sekarang</button>
+        </div>
     </div>
 
     <script src="script.js"></script>
