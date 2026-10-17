@@ -30,6 +30,7 @@ window.onload = function() {
 
         document.getElementById('loginCard').classList.add('hidden');
         document.getElementById('workspaceCard').classList.add('hidden');
+        document.getElementById('sessionModal').classList.add('hidden');
         document.getElementById('mainMenuCard').classList.remove('hidden');
     } else {
         isSessionValid = false;
@@ -72,7 +73,6 @@ function handleAuthAction() {
 }
 
 function showLoginScreen() {
-    // Pastikan modal tertutup dan hanya halaman login yang muncul
     document.getElementById('sessionModal').classList.add('hidden');
     document.getElementById('workspaceCard').classList.add('hidden');
     document.getElementById('mainMenuCard').classList.add('hidden');
@@ -81,6 +81,7 @@ function showLoginScreen() {
 
 function lewatiLogin() {
     localStorage.setItem('apo_skipped', 'true');
+    localStorage.removeItem('apo_token');
     isSessionValid = false;
     
     document.getElementById('userNameText').innerText = "Mode Tamu (Tanpa Login)";
@@ -88,6 +89,7 @@ function lewatiLogin() {
     
     updateAuthButtonState(false);
 
+    document.getElementById('sessionModal').classList.add('hidden');
     document.getElementById('loginCard').classList.add('hidden');
     document.getElementById('workspaceCard').classList.add('hidden');
     document.getElementById('mainMenuCard').classList.remove('hidden');
@@ -138,8 +140,8 @@ async function prosesLogin() {
         if(response.ok && result.success) {
             tokenGlobal = result.token;
             currentNik = nik;
-            let employeeName = result.employeeName;
-            let storeName = result.storeName;
+            let employeeName = result.employeeName || "Karyawan Alfamart";
+            let storeName = result.storeName || "Toko Alfamart";
             
             localStorage.setItem('apo_token', tokenGlobal);
             localStorage.setItem('apo_nik', currentNik);
@@ -153,6 +155,7 @@ async function prosesLogin() {
             document.getElementById('userNameText').innerText = employeeName;
             document.getElementById('storeNameText').innerText = storeName;
 
+            document.getElementById('sessionModal').classList.add('hidden');
             document.getElementById('loginCard').classList.add('hidden');
             document.getElementById('workspaceCard').classList.add('hidden');
             document.getElementById('mainMenuCard').classList.remove('hidden');
@@ -169,6 +172,7 @@ function pilihMenu(jenis) {
     let savedToken = localStorage.getItem('apo_token');
     let isSkipped = localStorage.getItem('apo_skipped') === 'true';
 
+    // Jika token tidak ada dan tidak dalam mode skip, tampilkan popup peringatan sesi habis
     if (!savedToken && !isSkipped) {
         isSessionValid = false;
         updateAuthButtonState(false);
@@ -224,14 +228,9 @@ function bukaAreaAdmin() {
     document.getElementById('adminFormArea').classList.remove('hidden');
 }
 
-function kembalikeMenu() {
-    document.getElementById('workspaceCard').classList.add('hidden');
-    document.getElementById('mainMenuCard').classList.remove('hidden');
-}
-
-// Alias agar tidak salah panggil
 function kembaliKeMenu() {
     document.getElementById('workspaceCard').classList.add('hidden');
+    document.getElementById('sessionModal').classList.add('hidden');
     document.getElementById('mainMenuCard').classList.remove('hidden');
 }
 
