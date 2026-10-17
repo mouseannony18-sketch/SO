@@ -311,14 +311,14 @@ function logout() {
 }
 
 // =========================================================
-// FUNGSI UNIVERSAL EKSPOR EXCEL & PDF DENGAN FORMAT TINGKAT LANJUT
+// FUNGSI UNIVERSAL EKSPOR EXCEL & PDF MENGGUNAKAN SHEETJS-STYLE
 // =========================================================
 function exportUniversalReport(judulLaporan, dataArray) {
     if (!dataArray || dataArray.length === 0) {
         return alert('Belum ada data untuk diunduh atau dicetak!');
     }
 
-    let pilihan = confirm(`Unduh Laporan [${judulLaporan}]?\n\n[OK] = Download Excel (.xls)\n[Cancel] = Cetak / Simpan ke PDF`);
+    let pilihan = confirm(`Unduh Laporan [${judulLaporan}]?\n\n[OK] = Download Excel (.xlsx)\n[Cancel] = Cetak / Simpan ke PDF`);
 
     if (pilihan) {
         downloadExcelCustomGlobal(judulLaporan, dataArray);
@@ -330,112 +330,130 @@ function exportUniversalReport(judulLaporan, dataArray) {
 function downloadExcelCustomGlobal(judul, dataArray) {
     try {
         let todayStr = "Tanggal: " + new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        let totalQty = dataArray.reduce((sum, item) => sum + (parseInt(item.qty || item.QTY || 0)), 0);
-        let totalOh = dataArray.reduce((sum, item) => sum + (parseInt(item.oh || item.OH || 0)), 0);
-        let totalSelisih = dataArray.reduce((sum, item) => sum + (parseInt(item.selisih || item.Selisih || 0)), 0);
+        
+        let ws_data = [
+            [judul],
+            [todayStr],
+            [],
+            ["No.", "PLU", "Barcode", "Nama Item", "QTY Fisik", "OH", "Selisih"]
+        ];
 
-        let htmlContent = `
-            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-            <head>
-                <meta charset="utf-8">
-                <style>
-                    body { font-family: Arial, sans-serif; }
-                    .title { font-size: 14px; font-weight: bold; text-align: center; background-color: #059669; color: #ffffff; height: 35px; vertical-align: middle; }
-                    .subtitle { font-size: 11px; font-style: italic; background-color: #D1FAE5; color: #065f46; height: 25px; vertical-align: middle; text-align: center; }
-                    th { background-color: #059669; color: #ffffff; font-weight: bold; text-align: center; border: 0.5pt solid #000000; padding: 6px; font-size: 11px; }
-                    td { border: 0.5pt solid #D1D5DB; padding: 5px; font-size: 10px; vertical-align: middle; }
-                    .text-center { text-align: center; }
-                    .text-right { text-align: right; }
-                    .text-left { text-align: left; }
-                    .text-red { color: #DC2626; font-weight: bold; text-align: center; }
-                    .total-cell { background-color: #FDE047; font-weight: bold; border: 1pt solid #000000; text-align: center; }
-                    .total-label { background-color: #FDE047; font-weight: bold; border: 1pt solid #000000; text-align: right; }
-                </style>
-            </head>
-            <body>
-                <table>
-                    <tr>
-                        <td colspan="7" class="title">${escapeHtml(judul)}</td>
-                    </tr>
-                    <tr>
-                        <td colspan="7" class="subtitle">${todayStr}</td>
-                    </tr>
-                    <tr><td colspan="7"></td></tr>
-                    <tr>
-                        <th>No.</th>
-                        <th>PLU</th>
-                        <th>Barcode</th>
-                        <th>Nama Item</th>
-                        <th>QTY Fisik</th>
-                        <th>OH</th>
-                        <th>Selisih</th>
-                    </tr>
-        `;
+        let totalQty = 0;
+        let totalOh = 0;
+        let totalSelisih = 0;
 
         dataArray.forEach((item, index) => {
             let no = item.no || (index + 1);
             let plu = item.plu || item.PLU || "-";
             let barcode = item.barcode || item.Barcode || "-";
             let nama = item.namaItem || item.Nama_Item || item.nama || "-";
-            let qty = item.qty ?? item.QTY ?? 0;
-            let oh = item.oh ?? item.OH ?? 0;
-            let selisih = item.selisih ?? item.Selisih ?? 0;
-            let selisihClass = selisih !== 0 ? 'text-red' : 'text-center';
+            let qty = parseInt(item.qty ?? item.QTY ?? 0);
+            let oh = parseInt(item.oh ?? item.OH ?? 0);
+            let selisih = parseInt(item.selisih ?? item.Selisih ?? 0);
 
-            htmlContent += `
-                <tr>
-                    <td class="text-center">${no}</td>
-                    <td class="text-right">${escapeHtml(String(plu))}</td>
-                    <td class="text-right">${escapeHtml(String(barcode))}</td>
-                    <td class="text-left">${escapeHtml(String(nama))}</td>
-                    <td class="text-center">${qty}</td>
-                    <td class="text-center">${oh}</td>
-                    <td class="${selisihClass}">${selisih}</td>
-                </tr>
-            `;
+            totalQty += qty;
+            totalOh += oh;
+            totalSelisih += selisih;
+
+            ws_data.push([no, plu, barcode, nama, qty, oh, selisih]);
         });
 
-        htmlContent += `
-                    <tr>
-                        <td colspan="4" class="total-label">TOTAL KESELURUHAN:</td>
-                        <td class="total-cell">${totalQty}</td>
-                        <td class="total-cell">${totalOh}</td>
-                        <td class="total-cell">${totalSelisih}</td>
-                    </tr>
-                </table>
-            </body>
-            </html>
-        `;
+        ws_data.push(["TOTAL KESELURUHAN:", "", "", "", totalQty, totalOh, totalSelisih]);
 
-        let bytes = new TextEncoder().encode(htmlContent);
-        let binString = Array.from(bytes, (byte) => String.fromCodePoint(byte)).join("");
-        let base64Content = btoa(binString);
+        let ws = XLSX.utils.aoa_to_sheet(ws_data);
 
-        let uri = 'data:application/vnd.ms-excel;base64,';
-        let excelFile = uri + base64Content;
+        let totalRowIdx = ws_data.length - 1;
+        ws['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // Judul Utama
+            { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }, // Tanggal
+            { s: { r: totalRowIdx, c: 0 }, e: { r: totalRowIdx, c: 3 } } // Total Keseluruhan
+        ];
 
-        let downloadLink = document.createElement("a");
-        downloadLink.href = excelFile;
-        downloadLink.download = (judul ? judul.replace(/[^a-zA-Z0-9]/g, "_") : "Laporan_SO") + ".xls";
-        
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
+        let thinBorder = {
+            top: { style: "thin", color: { rgb: "000000" } },
+            bottom: { style: "thin", color: { rgb: "000000" } },
+            left: { style: "thin", color: { rgb: "000000" } },
+            right: { style: "thin", color: { rgb: "000000" } }
+        };
+
+        let thickDoubleBorder = {
+            top: { style: "medium", color: { rgb: "000000" } },
+            bottom: { style: "double", color: { rgb: "000000" } },
+            left: { style: "thin", color: { rgb: "000000" } },
+            right: { style: "thin", color: { rgb: "000000" } }
+        };
+
+        // Style Judul
+        ws['A1'].s = {
+            fill: { fgColor: { rgb: "059669" } },
+            font: { name: "Arial", sz: 12, bold: true, color: { rgb: "FFFFFF" } },
+            alignment: { horizontal: "center", vertical: "center" }
+        };
+
+        // Style Subtitle Tanggal
+        ws['A2'].s = {
+            fill: { fgColor: { rgb: "D1FAE5" } },
+            font: { name: "Arial", sz: 10, italic: true, color: { rgb: "065F46" } },
+            alignment: { horizontal: "center", vertical: "center" }
+        };
+
+        // Style Header Kolom (Baris indeks 3)
+        let headerStyle = {
+            fill: { fgColor: { rgb: "059669" } },
+            font: { name: "Arial", sz: 10, bold: true, color: { rgb: "FFFFFF" } },
+            alignment: { horizontal: "center", vertical: "center" },
+            border: thinBorder
+        };
+        for (let c = 0; c <= 6; c++) {
+            let cellRef = XLSX.utils.encode_cell({ r: 3, c: c });
+            if (!ws[cellRef]) ws[cellRef] = {};
+            ws[cellRef].s = headerStyle;
+        }
+
+        // Style Baris Data & Total
+        for (let r = 4; r <= totalRowIdx; r++) {
+            let isTotal = (r === totalRowIdx);
+            for (let c = 0; c <= 6; c++) {
+                let cellRef = XLSX.utils.encode_cell({ r: r, c: c });
+                if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
+
+                let val = ws[cellRef].v;
+                let align = "center";
+                if (c === 3) align = "left";
+                else if (c === 1 || c === 2) align = "right";
+
+                if (isTotal) {
+                    ws[cellRef].s = {
+                        fill: { fgColor: { rgb: "FDE047" } },
+                        font: { name: "Arial", sz: 10, bold: true, color: { rgb: "000000" } },
+                        alignment: { horizontal: (c === 0 ? "right" : "center"), vertical: "center" },
+                        border: thickDoubleBorder
+                    };
+                } else {
+                    let fontColor = { rgb: "000000" };
+                    // Jika kolom selisih (c=6) bernilai negatif atau tidak 0, beri warna merah
+                    if (c === 6 && Number(val) !== 0) {
+                        fontColor = { rgb: "DC2626" };
+                    }
+                    ws[cellRef].s = {
+                        font: { name: "Arial", sz: 10, bold: (c === 6 && Number(val) !== 0), color: fontColor },
+                        alignment: { horizontal: align, vertical: "center" },
+                        border: thinBorder
+                    };
+                }
+            }
+        }
+
+        let wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Rak_979");
+
+        let fileName = (judul ? judul.replace(/[^a-zA-Z0-9]/g, "_") : "Laporan_SO") + ".xlsx";
+        XLSX.writeFile(wb, fileName);
 
     } catch (err) {
-        console.error("Gagal export Excel:", err);
+        console.error("Gagal export Excel dengan SheetJS:", err);
         alert("Terjadi kesalahan saat mengunduh Excel: " + err.message);
     }
-}
-
-function escapeHtml(unsafe) {
-    if (!unsafe) return "";
-    return String(unsafe)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
 }
 
 function cetakPDFGlobal(judul, dataArray) {
