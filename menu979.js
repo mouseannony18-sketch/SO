@@ -14,25 +14,48 @@ async function loadMenu979() {
     container.style.minHeight = "100vh";
 
     container.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <h3 style="font-size: 18px; margin: 0;">Menu Rak 979 (Stock Opname)</h3>
-            <button onclick="sinkronisasiStokServer(true)" style="background: #2563eb; width: auto; padding: 6px 12px; font-size: 12px; margin: 0;" title="Perbarui stok sistem dari server">🔄 Sync Server</button>
-        </div>
-        
-        <!-- PENCARIAN DENGAN TOMBOL CLEAR (X) & TOMBOL AKSI -->
-        <div class="top-action-bar">
-            <div class="search-box-wrapper">
-                <span class="search-icon">🔍</span>
-                <input type="text" id="inputCariItem" oninput="handlePencarianInput(this.value)" placeholder="Cari PLU / Barcode / Nama..." class="modern-search-input" />
-                <button id="btnClearSearch" onclick="bersihkanPencarian()" class="clear-search-btn hidden" title="Hapus pencarian">×</button>
+        <!-- HEADER ELEGAN (JUDUL, TOGGLE TEMA, & MENU PENGATURAN KOTAK) -->
+        <div class="so-header-bar">
+            <div class="so-header-title-wrapper">
+                <h3 class="so-header-title">Rak 979 (Stock Opname)</h3>
+                <span id="statusLoad979" class="so-header-subtitle">Memuat data...</span>
             </div>
-            <button onclick="bukaScannerKamera()" class="action-top-btn scan-btn" title="Scan Barcode via Kamera">📷 Scan</button>
-            <button onclick="konfirmasiResetData()" class="action-top-btn reset-btn" title="Reset Semua Data Qty">🗑️ Reset</button>
+            
+            <div class="so-header-actions">
+                <!-- Toggle Tema Gelap / Terang -->
+                <button onclick="toggleTheme()" class="theme-toggle-btn header-icon-btn" title="Ganti Tema">🌙</button>
+                
+                <!-- Kotak Pengaturan Menu (Dropdown) -->
+                <div class="dropdown-container">
+                    <button onclick="toggleDropdownMenu()" class="settings-box-btn header-icon-btn" title="Menu Pengaturan">⚙️</button>
+                    <div id="settingsDropdownMenu" class="dropdown-content hidden">
+                        <button onclick="kembaliKeMenu()">🏠 Menu Utama</button>
+                        <button onclick="sinkronisasiStokServer(true)">🔄 Sync Server</button>
+                        <button onclick="exportExcel979()">📥 Download Excel</button>
+                        <hr style="border-color: var(--border-color); margin: 4px 0;">
+                        <button onclick="logout()" style="color: #ef4444;">🚪 Logout</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <p id="statusLoad979" style="text-align: center; color: var(--text-muted); font-size: 12px; margin-bottom: 10px;">Memuat data master...</p>
-        
-        <!-- AREA SCANNER KAMERA (KEMBALI KE KONFIGURASI NORMAL YG STABIL) -->
+        <!-- BARIS 1 ATAS: TOMBOL RESET & CEK SELISIH -->
+        <div class="top-action-bar-row1">
+            <button onclick="konfirmasiResetData()" class="action-top-btn reset-btn" title="Reset Semua Data Qty">🗑️ Reset Data</button>
+            <button onclick="filterSelisihToggle()" id="btnCekSelisih" class="action-top-btn selisih-btn">📊 Cek Selisih</button>
+        </div>
+
+        <!-- BARIS 2 BAWAH: KOLOM PENCARIAN & TOMBOL SCAN -->
+        <div class="top-action-bar-row2">
+            <div class="search-box-wrapper">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="inputCariItem" oninput="handlePencarianInput(this.value)" placeholder="Cari PLU, Barcode, Nama..." class="modern-search-input" />
+                <button id="btnClearSearch" onclick="bersihkanPencarian()" class="clear-search-btn hidden">×</button>
+            </div>
+            <button onclick="bukaScannerKamera()" class="action-top-btn scan-btn">📷 Scan</button>
+        </div>
+
+        <!-- AREA SCANNER KAMERA -->
         <div id="scannerContainer" class="scanner-box hidden">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                 <b style="font-size: 12px; color: #38bdf8;">Arahkan Kamera ke Barcode</b>
@@ -44,6 +67,7 @@ async function loadMenu979() {
             <div id="reader"></div>
         </div>
 
+        <!-- TABEL UTAMA FULL LAYAR -->
         <div class="table-full-container">
             <table id="tabelMenu979">
                 <thead>
@@ -59,13 +83,17 @@ async function loadMenu979() {
                 <tbody id="tbodyMenu979"></tbody>
             </table>
         </div>
-
-        <div style="display: flex; gap: 10px; margin-top: 15px;">
-            <button onclick="exportExcel979()" class="excel-btn" style="flex: 1; margin:0; padding: 12px;">Download Excel</button>
-            <button onclick="filterSelisihToggle()" id="btnFilterSelisih" style="background: #f59e0b; flex: 1; margin:0; padding: 12px;">Filter Selisih</button>
-        </div>
-        <button onclick="kembaliKeMenu()" class="back-btn" style="padding: 12px;">Kembali ke Menu Utama</button>
     `;
+
+    // Tutup dropdown jika pengguna mengklik di luar area dropdown
+    window.onclick = function(event) {
+        if (!event.target.matches('.settings-box-btn') && !event.target.closest('.settings-box-btn')) {
+            let dropdown = document.getElementById('settingsDropdownMenu');
+            if (dropdown && !dropdown.classList.contains('hidden')) {
+                dropdown.classList.add('hidden');
+            }
+        }
+    };
 
     if (!window.Html5Qrcode) {
         let scriptTag = document.createElement('script');
@@ -122,6 +150,11 @@ async function loadMenu979() {
     }
 }
 
+function toggleDropdownMenu() {
+    let dropdown = document.getElementById('settingsDropdownMenu');
+    dropdown.classList.toggle('hidden');
+}
+
 function parseCSVData(text) {
     let lines = text.split("\n");
     let masterItems = [];
@@ -169,9 +202,9 @@ function parseCSVData(text) {
     renderTabel979(dataMenu979);
     
     if (savedLocalData) {
-        document.getElementById('statusLoad979').innerText = `Memuat ${dataMenu979.length} item dari memori tersimpan.`;
+        document.getElementById('statusLoad979').innerText = `${dataMenu979.length} item (Tersimpan)`;
     } else {
-        document.getElementById('statusLoad979').innerText = `Total ${dataMenu979.length} item dimuat. Menyinkronkan stok server...`;
+        document.getElementById('statusLoad979').innerText = `Sinkronisasi server...`;
         sinkronisasiStokServer(false);
     }
 }
@@ -183,7 +216,7 @@ function renderTabel979(listData) {
 
     listData.forEach((item) => {
         let realIndex = dataMenu979.findIndex(d => d.plu === item.plu);
-        let selisihWarna = item.selisih !== 0 ? "color: #ef4444;" : "";
+        let selisihWarna = item.selisih !== 0 ? "color: #ef4444; font-weight: bold;" : "";
         
         let tr = document.createElement('tr');
         tr.innerHTML = `
@@ -197,13 +230,12 @@ function renderTabel979(listData) {
                 </div>
             </td>
             <td style="text-align: center; font-size: 13px;" id="oh-val-${realIndex}">${item.oh}</td>
-            <td style="text-align: center; font-size: 13px; font-weight: bold; ${selisihWarna}" id="selisih-val-${realIndex}">${item.selisih}</td>
+            <td style="text-align: center; font-size: 13px; ${selisihWarna}" id="selisih-val-${realIndex}">${item.selisih}</td>
         `;
         tbody.appendChild(tr);
     });
 }
 
-// Logika Pencarian & Tombol Clear (X)
 function handlePencarianInput(val) {
     let clearBtn = document.getElementById('btnClearSearch');
     if (val.length > 0) {
@@ -217,11 +249,17 @@ function handlePencarianInput(val) {
 function filterPencarianRealtime(keyword) {
     let query = keyword.toLowerCase().trim();
     if (!query) {
-        renderTabel979(dataMenu979);
+        if (statusFilterSelisih) {
+            let filtered = dataMenu979.filter(item => item.selisih !== 0);
+            renderTabel979(filtered);
+        } else {
+            renderTabel979(dataMenu979);
+        }
         return;
     }
 
-    let filtered = dataMenu979.filter(item => 
+    let baseList = statusFilterSelisih ? dataMenu979.filter(item => item.selisih !== 0) : dataMenu979;
+    let filtered = baseList.filter(item => 
         item.plu.toLowerCase().includes(query) ||
         item.barcode.toLowerCase().includes(query) ||
         item.namaItem.toLowerCase().includes(query)
@@ -234,11 +272,16 @@ function bersihkanPencarian() {
     let inputEl = document.getElementById('inputCariItem');
     inputEl.value = "";
     document.getElementById('btnClearSearch').classList.add('hidden');
-    renderTabel979(dataMenu979);
+    
+    if (statusFilterSelisih) {
+        let filtered = dataMenu979.filter(item => item.selisih !== 0);
+        renderTabel979(filtered);
+    } else {
+        renderTabel979(dataMenu979);
+    }
     inputEl.focus();
 }
 
-// Buka Kamera dengan Pemilihan Lensa Utama (Normal) Secara Spesifik
 async function bukaScannerKamera() {
     let scannerBox = document.getElementById('scannerContainer');
     scannerBox.classList.remove('hidden');
@@ -253,28 +296,20 @@ async function bukaScannerKamera() {
         let devices = await Html5Qrcode.getCameras();
         if (devices && devices.length > 0) {
             let selectedCameraId = devices[0].id;
-
-            // Filter khusus mencari kamera belakang (back / rear)
             let backCameras = devices.filter(device => {
                 let label = device.label.toLowerCase();
                 return label.includes('back') || label.includes('rear') || label.includes('belakang');
             });
 
             if (backCameras.length > 0) {
-                // Jika ada beberapa kamera belakang, pilih indeks terakhir dari kamera belakang 
-                // (karena pada banyak HP multi-lensa, kamera utama / normal berada setelah lensa wide/ultrawide)
                 selectedCameraId = backCameras[backCameras.length - 1].id;
             } else if (devices.length > 1) {
-                // Fallback jika label tidak terbaca browser, pilih kamera kedua (biasanya kamera belakang utama)
                 selectedCameraId = devices[1].id;
             }
 
             await html5QrCode.start(
                 selectedCameraId,
-                { 
-                    fps: 20, 
-                    qrbox: { width: 260, height: 140 }
-                },
+                { fps: 20, qrbox: { width: 260, height: 140 } },
                 (decodedText) => {
                     tutupScannerKamera();
                     cariDanBukaItemDariBarcode(decodedText.trim());
@@ -285,10 +320,8 @@ async function bukaScannerKamera() {
             throw "Tidak ada kamera terdeteksi.";
         }
     } catch (err) {
-        console.warn("Gagal menggunakan ID spesifik, mencoba mode environment:", err);
-        // Fallback terakhir menggunakan parameter exact environment
         html5QrCode.start(
-            { facingMode: { exact: "environment" } },
+            { facingMode: "environment" },
             { fps: 15, qrbox: { width: 260, height: 140 } },
             (decodedText) => {
                 tutupScannerKamera();
@@ -302,8 +335,6 @@ async function bukaScannerKamera() {
     }
 }
 
-
-// Kontrol LED Flash (Senter)
 function toggleFlashLight() {
     if (!html5QrCode || !html5QrCode.isScanning) return;
 
@@ -313,9 +344,8 @@ function toggleFlashLight() {
     }).then(() => {
         updateFlashButtonUI();
     }).catch(err => {
-        console.warn("Kontrol Flash tidak didukung:", err);
         isFlashOn = !isFlashOn;
-        alert("Fitur Flash (Senter) tidak didukung pada perangkat/browser ini.");
+        alert("Fitur Flash (Senter) tidak didukung pada perangkat ini.");
     });
 }
 
@@ -354,12 +384,12 @@ function cariDanBukaItemDariBarcode(scannedBarcode) {
         bersihkanPencarian();
         bukaPopupQty(foundIndex);
     } else {
-        alert(`Barcode [${scannedBarcode}] tidak ditemukan di dalam Daftar Master Rak 979 ini.`);
+        alert(`Barcode [${scannedBarcode}] tidak ditemukan di dalam Master Rak 979.`);
     }
 }
 
 function konfirmasiResetData() {
-    let konfirmasi = confirm("PERINGATAN: Apakah Anda yakin ingin mereset semua data Qty fisik dan stok sistem yang tersimpan?");
+    let konfirmasi = confirm("PERINGATAN: Apakah Anda yakin ingin mereset semua data Qty fisik?");
     if (konfirmasi) {
         localStorage.removeItem(STORAGE_KEY_979);
         dataMenu979.forEach(item => {
@@ -368,7 +398,7 @@ function konfirmasiResetData() {
             item.selisih = 0;
         });
         renderTabel979(dataMenu979);
-        document.getElementById('statusLoad979').innerText = "Data berhasil direset menjadi 0.";
+        document.getElementById('statusLoad979').innerText = "Data direset.";
         alert("Semua data Qty berhasil direset!");
     }
 }
@@ -420,8 +450,10 @@ function simpanQtyTambah() {
         selisihEl.innerText = item.selisih;
         if (item.selisih !== 0) {
             selisihEl.style.color = "#ef4444";
+            selisihEl.style.fontWeight = "bold";
         } else {
             selisihEl.style.color = "inherit";
+            selisihEl.style.fontWeight = "normal";
         }
     }
 
@@ -435,20 +467,17 @@ async function sinkronisasiStokServer(isManual = false) {
 
     if (!savedToken || isSkipped) {
         if (isManual) alert("Mode Tamu / Belum Login: Tidak dapat melakukan sinkronisasi server.");
-        document.getElementById('statusLoad979').innerText = `Total ${dataMenu979.length} item dimuat. (Mode Tanpa Login / OH = 0)`;
+        document.getElementById('statusLoad979').innerText = "Mode Tamu (OH = 0)";
         return;
     }
 
     let statusEl = document.getElementById('statusLoad979');
-    statusEl.innerText = "Sedang menyinkronkan ulang stok sistem dari server...";
+    statusEl.innerText = "Sync server...";
 
     let successCount = 0;
     for (let i = 0; i < dataMenu979.length; i++) {
         let item = dataMenu979[i];
-        
-        if (!item.barcode || item.barcode === "-") {
-            continue;
-        }
+        if (!item.barcode || item.barcode === "-") continue;
 
         try {
             let response = await fetch('/api/scan', {
@@ -469,39 +498,50 @@ async function sinkronisasiStokServer(isManual = false) {
                     selisihEl.innerText = item.selisih;
                     if (item.selisih !== 0) {
                         selisihEl.style.color = "#ef4444";
+                        selisihEl.style.fontWeight = "bold";
                     } else {
                         selisihEl.style.color = "inherit";
+                        selisihEl.style.fontWeight = "normal";
                     }
                 }
                 successCount++;
             }
         } catch (e) {
-            console.error(`Gagal sync barcode ${item.barcode}:`, e);
+            console.error(e);
         }
     }
 
     localStorage.setItem(STORAGE_KEY_979, JSON.stringify(dataMenu979));
-    statusEl.innerText = `Sinkronisasi selesai! Berhasil memperbarui stok ${successCount} item dari server.`;
-    
-    if (isManual) {
-        alert(`Sinkronisasi Berhasil! Stok sistem untuk ${successCount} item telah diperbarui.`);
-    }
+    statusEl.innerText = `${successCount} item tersinkron`;
+    if (isManual) alert(`Sinkronisasi Berhasil! Stok ${successCount} item diperbarui.`);
 }
 
 let statusFilterSelisih = false;
 function filterSelisihToggle() {
     statusFilterSelisih = !statusFilterSelisih;
-    let btn = document.getElementById('btnFilterSelisih');
+    let btn = document.getElementById('btnCekSelisih');
+    let keyword = document.getElementById('inputCariItem').value;
 
     if (statusFilterSelisih) {
         btn.style.background = "#dc2626";
-        btn.innerText = "Tampilkan Semua";
+        btn.innerText = "📋 Tampilkan Semua";
         let filtered = dataMenu979.filter(item => item.selisih !== 0);
+        if (keyword) {
+            filtered = filtered.filter(item => 
+                item.plu.toLowerCase().includes(keyword) ||
+                item.barcode.toLowerCase().includes(keyword) ||
+                item.namaItem.toLowerCase().includes(keyword)
+            );
+        }
         renderTabel979(filtered);
     } else {
-        btn.style.background = "#f59e0b";
-        btn.innerText = "Filter Selisih";
-        renderTabel979(dataMenu979);
+        btn.style.background = "#2563eb";
+        btn.innerText = "📊 Cek Selisih";
+        if (keyword) {
+            filterPencarianRealtime(keyword);
+        } else {
+            renderTabel979(dataMenu979);
+        }
     }
 }
 
