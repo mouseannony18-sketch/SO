@@ -27,22 +27,29 @@ window.onload = function() {
         currentNik = savedNik || "Tamu";
         isSessionValid = savedToken ? true : false;
         
-        document.getElementById('userNameText').innerText = savedName || (isSkipped ? "Mode Tamu (Tanpa Login)" : "Karyawan Alfamart");
-        document.getElementById('storeNameText').innerText = savedStore || "Sinkronisasi Server: 0 (Null)";
+        let userNameEl = document.getElementById('userNameText');
+        let storeNameEl = document.getElementById('storeNameText');
+        if (userNameEl) userNameEl.innerText = savedName || (isSkipped ? "Mode Tamu (Tanpa Login)" : "Karyawan Alfamart");
+        if (storeNameEl) storeNameEl.innerText = savedStore || "Toko Alfamart";
 
         updateAuthButtonState(isSessionValid);
 
-        document.getElementById('loginCard').classList.add('hidden');
-        document.getElementById('sessionModal').classList.add('hidden');
+        let loginCard = document.getElementById('loginCard');
+        let sessionModal = document.getElementById('sessionModal');
+        let workspaceCard = document.getElementById('workspaceCard');
+        let mainMenuCard = document.getElementById('mainMenuCard');
+
+        if (loginCard) loginCard.classList.add('hidden');
+        if (sessionModal) sessionModal.classList.add('hidden');
 
         if (isPageRefreshed && activeMenu === '979' && typeof loadMenu979 === 'function') {
-            document.getElementById('mainMenuCard').classList.add('hidden');
-            document.getElementById('workspaceCard').classList.remove('hidden');
+            if (mainMenuCard) mainMenuCard.classList.add('hidden');
+            if (workspaceCard) workspaceCard.classList.remove('hidden');
             loadMenu979();
         } else {
             localStorage.removeItem('apo_active_menu');
-            document.getElementById('workspaceCard').classList.add('hidden');
-            document.getElementById('mainMenuCard').classList.remove('hidden');
+            if (workspaceCard) workspaceCard.classList.add('hidden');
+            if (mainMenuCard) mainMenuCard.classList.remove('hidden');
         }
 
         sessionStorage.setItem('apo_is_refreshed', 'true');
@@ -128,10 +135,15 @@ function handleAuthAction() {
 
 function showLoginScreen() {
     localStorage.removeItem('apo_active_menu');
-    document.getElementById('sessionModal').classList.add('hidden');
-    document.getElementById('workspaceCard').classList.add('hidden');
-    document.getElementById('mainMenuCard').classList.add('hidden');
-    document.getElementById('loginCard').classList.remove('hidden');
+    let sessionModal = document.getElementById('sessionModal');
+    let workspaceCard = document.getElementById('workspaceCard');
+    let mainMenuCard = document.getElementById('mainMenuCard');
+    let loginCard = document.getElementById('loginCard');
+
+    if (sessionModal) sessionModal.classList.add('hidden');
+    if (workspaceCard) workspaceCard.classList.add('hidden');
+    if (mainMenuCard) mainMenuCard.classList.add('hidden');
+    if (loginCard) loginCard.classList.remove('hidden');
 }
 
 function lewatiLogin() {
@@ -142,15 +154,22 @@ function lewatiLogin() {
     localStorage.removeItem('apo_store');
     isSessionValid = false;
     
-    document.getElementById('userNameText').innerText = "Mode Tamu (Tanpa Login)";
-    document.getElementById('storeNameText').innerText = "Sinkronisasi Server: 0 (Null)";
+    let userNameEl = document.getElementById('userNameText');
+    let storeNameEl = document.getElementById('storeNameText');
+    if (userNameEl) userNameEl.innerText = "Mode Tamu (Tanpa Login)";
+    if (storeNameEl) storeNameEl.innerText = "Toko Alfamart";
     
     updateAuthButtonState(false);
 
-    document.getElementById('sessionModal').classList.add('hidden');
-    document.getElementById('loginCard').classList.add('hidden');
-    document.getElementById('workspaceCard').classList.add('hidden');
-    document.getElementById('mainMenuCard').classList.remove('hidden');
+    let sessionModal = document.getElementById('sessionModal');
+    let loginCard = document.getElementById('loginCard');
+    let workspaceCard = document.getElementById('workspaceCard');
+    let mainMenuCard = document.getElementById('mainMenuCard');
+
+    if (sessionModal) sessionModal.classList.add('hidden');
+    if (loginCard) loginCard.classList.add('hidden');
+    if (workspaceCard) workspaceCard.classList.add('hidden');
+    if (mainMenuCard) mainMenuCard.classList.remove('hidden');
 }
 
 async function prosesLogin() {
@@ -160,11 +179,11 @@ async function prosesLogin() {
     let status = document.getElementById('statusLogin');
 
     if(!nik || !pin || !otp) {
-        alert('Semua kolom harus diisi!');
+        if (status) status.innerText = "Semua kolom harus diisi!";
         return;
     }
 
-    status.innerText = "Menghubungi server...";
+    if (status) status.innerText = "Menghubungi server...";
 
     try {
         let response = await fetch('/api/login', {
@@ -190,18 +209,25 @@ async function prosesLogin() {
             isSessionValid = true;
             updateAuthButtonState(true);
 
-            document.getElementById('userNameText').innerText = employeeName;
-            document.getElementById('storeNameText').innerText = storeName;
+            let userNameEl = document.getElementById('userNameText');
+            let storeNameEl = document.getElementById('storeNameText');
+            if (userNameEl) userNameEl.innerText = employeeName;
+            if (storeNameEl) storeNameEl.innerText = storeName;
 
-            document.getElementById('sessionModal').classList.add('hidden');
-            document.getElementById('loginCard').classList.add('hidden');
-            document.getElementById('workspaceCard').classList.add('hidden');
-            document.getElementById('mainMenuCard').classList.remove('hidden');
+            let sessionModal = document.getElementById('sessionModal');
+            let loginCard = document.getElementById('loginCard');
+            let workspaceCard = document.getElementById('workspaceCard');
+            let mainMenuCard = document.getElementById('mainMenuCard');
+
+            if (sessionModal) sessionModal.classList.add('hidden');
+            if (loginCard) loginCard.classList.add('hidden');
+            if (workspaceCard) workspaceCard.classList.add('hidden');
+            if (mainMenuCard) mainMenuCard.classList.remove('hidden');
         } else {
-            status.innerText = "Gagal: " + (result.message || "Autentikasi ditolak");
+            if (status) status.innerText = "Gagal: " + (result.message || "Autentikasi ditolak");
         }
     } catch (error) {
-        status.innerText = "Terjadi kesalahan jaringan.";
+        if (status) status.innerText = "Terjadi kesalahan jaringan.";
         console.error(error);
     }
 }
@@ -213,7 +239,8 @@ function pilihMenu(jenis) {
     if (!savedToken && !isSkipped) {
         isSessionValid = false;
         updateAuthButtonState(false);
-        document.getElementById('sessionModal').classList.remove('hidden');
+        let sessionModal = document.getElementById('sessionModal');
+        if (sessionModal) sessionModal.classList.remove('hidden');
         return;
     }
 
@@ -221,8 +248,11 @@ function pilihMenu(jenis) {
     localStorage.setItem('apo_active_menu', jenis);
     history.pushState({ menu: jenis }, "", "#" + jenis);
 
-    document.getElementById('mainMenuCard').classList.add('hidden');
-    document.getElementById('workspaceCard').classList.remove('hidden');
+    let mainMenuCard = document.getElementById('mainMenuCard');
+    let workspaceCard = document.getElementById('workspaceCard');
+
+    if (mainMenuCard) mainMenuCard.classList.add('hidden');
+    if (workspaceCard) workspaceCard.classList.remove('hidden');
 
     let judul = "";
     if (jenis === '979') {
@@ -252,12 +282,14 @@ function pilihMenu(jenis) {
 }
 
 function tutupModalLogin() {
-    document.getElementById('sessionModal').classList.add('hidden');
+    let sessionModal = document.getElementById('sessionModal');
+    if (sessionModal) sessionModal.classList.add('hidden');
     showLoginScreen();
 }
 
 function tutupModalDanLanjutkan() {
-    document.getElementById('sessionModal').classList.add('hidden');
+    let sessionModal = document.getElementById('sessionModal');
+    if (sessionModal) sessionModal.classList.add('hidden');
     lewatiLogin();
 }
 
@@ -311,7 +343,7 @@ function logout() {
 }
 
 // =========================================================
-// FUNGSI UNIVERSAL EKSPOR EXCEL & PDF MENGGUNAKAN SHEETJS-STYLE
+// FUNGSI UNIVERSAL EKSPOR EXCEL (.xlsx) & PDF DENGAN STYLING
 // =========================================================
 function exportUniversalReport(judulLaporan, dataArray) {
     if (!dataArray || dataArray.length === 0) {
@@ -329,6 +361,12 @@ function exportUniversalReport(judulLaporan, dataArray) {
 
 function downloadExcelCustomGlobal(judul, dataArray) {
     try {
+        let XLSXLib = window.XLSX || window.XLSXStyle;
+        if (!XLSXLib) {
+            alert("Pustaka Excel belum termuat sempurna. Periksa koneksi internet atau tag script di HTML.");
+            return;
+        }
+
         let todayStr = "Tanggal: " + new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         
         let ws_data = [
@@ -360,7 +398,7 @@ function downloadExcelCustomGlobal(judul, dataArray) {
 
         ws_data.push(["TOTAL KESELURUHAN:", "", "", "", totalQty, totalOh, totalSelisih]);
 
-        let ws = XLSX.utils.aoa_to_sheet(ws_data);
+        let ws = XLSXLib.utils.aoa_to_sheet(ws_data);
 
         let totalRowIdx = ws_data.length - 1;
         ws['!merges'] = [
@@ -384,18 +422,22 @@ function downloadExcelCustomGlobal(judul, dataArray) {
         };
 
         // Style Judul
-        ws['A1'].s = {
-            fill: { fgColor: { rgb: "059669" } },
-            font: { name: "Arial", sz: 12, bold: true, color: { rgb: "FFFFFF" } },
-            alignment: { horizontal: "center", vertical: "center" }
-        };
+        if (ws['A1']) {
+            ws['A1'].s = {
+                fill: { fgColor: { rgb: "059669" } },
+                font: { name: "Arial", sz: 12, bold: true, color: { rgb: "FFFFFF" } },
+                alignment: { horizontal: "center", vertical: "center" }
+            };
+        }
 
         // Style Subtitle Tanggal
-        ws['A2'].s = {
-            fill: { fgColor: { rgb: "D1FAE5" } },
-            font: { name: "Arial", sz: 10, italic: true, color: { rgb: "065F46" } },
-            alignment: { horizontal: "center", vertical: "center" }
-        };
+        if (ws['A2']) {
+            ws['A2'].s = {
+                fill: { fgColor: { rgb: "D1FAE5" } },
+                font: { name: "Arial", sz: 10, italic: true, color: { rgb: "065F46" } },
+                alignment: { horizontal: "center", vertical: "center" }
+            };
+        }
 
         // Style Header Kolom (Baris indeks 3)
         let headerStyle = {
@@ -405,7 +447,7 @@ function downloadExcelCustomGlobal(judul, dataArray) {
             border: thinBorder
         };
         for (let c = 0; c <= 6; c++) {
-            let cellRef = XLSX.utils.encode_cell({ r: 3, c: c });
+            let cellRef = XLSXLib.utils.encode_cell({ r: 3, c: c });
             if (!ws[cellRef]) ws[cellRef] = {};
             ws[cellRef].s = headerStyle;
         }
@@ -414,7 +456,7 @@ function downloadExcelCustomGlobal(judul, dataArray) {
         for (let r = 4; r <= totalRowIdx; r++) {
             let isTotal = (r === totalRowIdx);
             for (let c = 0; c <= 6; c++) {
-                let cellRef = XLSX.utils.encode_cell({ r: r, c: c });
+                let cellRef = XLSXLib.utils.encode_cell({ r: r, c: c });
                 if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
 
                 let val = ws[cellRef].v;
@@ -431,7 +473,6 @@ function downloadExcelCustomGlobal(judul, dataArray) {
                     };
                 } else {
                     let fontColor = { rgb: "000000" };
-                    // Jika kolom selisih (c=6) bernilai negatif atau tidak 0, beri warna merah
                     if (c === 6 && Number(val) !== 0) {
                         fontColor = { rgb: "DC2626" };
                     }
@@ -444,14 +485,14 @@ function downloadExcelCustomGlobal(judul, dataArray) {
             }
         }
 
-        let wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Rak_979");
+        let wb = XLSXLib.utils.book_new();
+        XLSXLib.utils.book_append_sheet(wb, ws, "Rak_979");
 
         let fileName = (judul ? judul.replace(/[^a-zA-Z0-9]/g, "_") : "Laporan_SO") + ".xlsx";
-        XLSX.writeFile(wb, fileName);
+        XLSXLib.writeFile(wb, fileName);
 
     } catch (err) {
-        console.error("Gagal export Excel dengan SheetJS:", err);
+        console.error("Gagal export Excel:", err);
         alert("Terjadi kesalahan saat mengunduh Excel: " + err.message);
     }
 }
@@ -542,4 +583,12 @@ function cetakPDFGlobal(judul, dataArray) {
     let win = window.open('', '_blank');
     win.document.write(htmlContent);
     win.document.close();
+}
+
+// Fungsi dummy pendukung form SO Reguler & Admin
+function tambahData() {
+    alert("Fitur SO Reguler aktif.");
+}
+function simpanItemAdmin() {
+    alert("Item admin disimpan.");
 }
