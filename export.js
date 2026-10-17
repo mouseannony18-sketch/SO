@@ -1,5 +1,5 @@
 // =========================================================
-// MODUL EKSPOR EXCEL MURNI SHEETJS & CETAK PDF (export.js)
+// MODUL EKSPOR EXCEL LOKAL & CETAK PDF (export.js)
 // =========================================================
 
 function exportUniversalReport(judulLaporan, dataArray) {
@@ -20,13 +20,12 @@ function downloadExcelCustomGlobal(judul, dataArray) {
     try {
         let XLSXLib = window.XLSX;
         if (!XLSXLib) {
-            alert("Pustaka xlsx.min.js belum dimuat dengan benar!");
+            alert("Pustaka lokal xlsx.min.js belum terbaca. Pastikan file tersimpan di folder utama!");
             return;
         }
 
         let todayStr = "Tanggal: " + new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         
-        // Menyusun baris data array (AOA) untuk SheetJS
         let ws_data = [
             [judul],
             [todayStr],
@@ -51,15 +50,14 @@ function downloadExcelCustomGlobal(judul, dataArray) {
             totalOh += oh;
             totalSelisih += selisih;
 
-            ws_data.push([no, String(plu), String(barcode), nama, qty, oh, selisih]);
+            ws_data.push([no, plu, barcode, nama, qty, oh, selisih]);
         });
 
-        // Baris Total Keseluruhan di bagian bawah
         ws_data.push(["TOTAL KESELURUHAN:", "", "", "", totalQty, totalOh, totalSelisih]);
 
         let ws = XLSXLib.utils.aoa_to_sheet(ws_data);
 
-        // Mengatur lebar kolom agar rapi di HP
+        // Pengaturan lebar kolom agar rapi dan tidak terpotong di HP
         ws['!cols'] = [
             { wch: 6 },   // No.
             { wch: 10 },  // PLU
@@ -72,9 +70,9 @@ function downloadExcelCustomGlobal(judul, dataArray) {
 
         let totalRowIdx = ws_data.length - 1;
         ws['!merges'] = [
-            { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // Judul utama digabung
-            { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }, // Tanggal digabung
-            { s: { r: totalRowIdx, c: 0 }, e: { r: totalRowIdx, c: 3 } } // Label total digabung
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // Judul Utama
+            { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }, // Tanggal
+            { s: { r: totalRowIdx, c: 0 }, e: { r: totalRowIdx, c: 3 } } // Total Keseluruhan
         ];
 
         let wb = XLSXLib.utils.book_new();
