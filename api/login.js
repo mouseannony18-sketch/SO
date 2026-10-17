@@ -39,7 +39,6 @@ module.exports = async function (req, res) {
         }
         formBody = formBody.join("&");
 
-        // Menggunakan native fetch bawaan Node.js di Vercel
         const apiResponse = await fetch(targetApiUrl, {
             method: 'POST',
             headers: headers,
@@ -49,10 +48,14 @@ module.exports = async function (req, res) {
         const resData = await apiResponse.json();
 
         if (apiResponse.ok && resData.code === 200) {
-            const token = resData.payload?.token || resData.token;
+            const payloadData = resData.payload || {};
+            const token = payloadData.token || resData.token;
+            
             return res.status(200).json({
                 success: true,
-                token: token || "TOKEN_BERHASIL"
+                token: token || "TOKEN_BERHASIL",
+                employeeName: payloadData.employeeName || "Karyawan",
+                storeName: payloadData.storeName || "Toko Alfamart"
             });
         } else {
             return res.status(400).json({
