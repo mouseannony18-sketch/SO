@@ -82,6 +82,9 @@ function showLoginScreen() {
 function lewatiLogin() {
     localStorage.setItem('apo_skipped', 'true');
     localStorage.removeItem('apo_token');
+    localStorage.removeItem('apo_nik');
+    localStorage.removeItem('apo_name');
+    localStorage.removeItem('apo_store');
     isSessionValid = false;
     
     document.getElementById('userNameText').innerText = "Mode Tamu (Tanpa Login)";
@@ -172,7 +175,6 @@ function pilihMenu(jenis) {
     let savedToken = localStorage.getItem('apo_token');
     let isSkipped = localStorage.getItem('apo_skipped') === 'true';
 
-    // Jika token tidak ada dan tidak dalam mode skip, tampilkan popup peringatan sesi habis
     if (!savedToken && !isSkipped) {
         isSessionValid = false;
         updateAuthButtonState(false);
@@ -287,10 +289,21 @@ async function tambahData() {
 
         let result = await response.json();
 
-        if (response.status === 401 || (result && result.message && result.message.toLowerCase().includes('token'))) {
+        // Tangkap pesan error Unauthorized atau token tidak valid dari server pusat
+        let pesanError = (result && result.message) ? result.message.toLowerCase() : "";
+        if (response.status === 401 || pesanError.includes('unauthorized') || pesanError.includes('token')) {
+            // Reset total localStorage terkait sesi login
             localStorage.removeItem('apo_token');
+            localStorage.removeItem('apo_nik');
+            localStorage.removeItem('apo_name');
+            localStorage.removeItem('apo_store');
+            localStorage.removeItem('apo_skipped');
+
             isSessionValid = false;
             updateAuthButtonState(false);
+            
+            // Sembunyikan workspace dan tampilkan modal popup custom kita
+            document.getElementById('workspaceCard').classList.add('hidden');
             document.getElementById('sessionModal').classList.remove('hidden');
             return;
         }
