@@ -223,7 +223,7 @@ function pilihMenu(jenis) {
 
     let judul = "";
     if (jenis === '979') {
-        judul = "Menu Rak 979 (Stock Opname)";
+        judul = "Menu Rak 979 (Rawan Hilang)";
         if (typeof loadMenu979 === 'function') {
             loadMenu979();
         }
@@ -302,15 +302,15 @@ function logout() {
     showLoginScreen();
 }
 
-// ==========================================
-// FUNGSI UNIVERSAL EKSPOR EXCEL & PDF/CETAK
-// ==========================================
+// =========================================================
+// FUNGSI UNIVERSAL EKSPOR EXCEL & PDF DENGAN FORMAT TINGKAT LANJUT
+// =========================================================
 function exportUniversalReport(judulLaporan, dataArray) {
     if (!dataArray || dataArray.length === 0) {
         return alert('Belum ada data untuk diunduh atau dicetak!');
     }
 
-    let pilihan = confirm(`Unduh Laporan [${judulLaporan}]?\n\n[OK] = Download Excel (.xlsx)\n[Cancel] = Cetak / Simpan ke PDF`);
+    let pilihan = confirm(`Unduh Laporan [${judulLaporan}]?\n\n[OK] = Download Excel (.xls)\n[Cancel] = Cetak / Simpan ke PDF`);
 
     if (pilihan) {
         downloadExcelCustomGlobal(judulLaporan, dataArray);
@@ -326,7 +326,6 @@ function downloadExcelCustomGlobal(judul, dataArray) {
     let totalOh = dataArray.reduce((sum, item) => sum + (parseInt(item.oh || item.OH || 0)), 0);
     let totalSelisih = dataArray.reduce((sum, item) => sum + (parseInt(item.selisih || item.Selisih || 0)), 0);
 
-    // Membuat dokumen berbasis HTML yang didukung penuh oleh Excel / Google Sheets untuk styling warna & border
     let htmlContent = `
         <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
         <head>
@@ -334,7 +333,7 @@ function downloadExcelCustomGlobal(judul, dataArray) {
             <style>
                 table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; }
                 th, td { border: 0.5pt solid #9ca3af; padding: 6px 8px; font-size: 11pt; }
-                .title { background-color: #059669; color: #ffffff; font-weight: bold; font-size: 14pt; text-align: center; vertical-align: middle; height: 35px; }
+                .title { background-color: #059669; color: #ffffff; font-weight: bold; font-size: 13pt; text-align: center; vertical-align: middle; height: 35px; }
                 .subtitle { background-color: #D1FAE5; color: #065f46; font-style: italic; font-size: 10pt; height: 22px; vertical-align: middle; }
                 .header-th { background-color: #059669; color: #ffffff; font-weight: bold; text-align: center; vertical-align: middle; height: 28px; }
                 .total-tr { background-color: #FDE047; font-weight: bold; border-top: 1.5pt solid #000; border-bottom: 1.5pt solid #000; }
@@ -355,9 +354,9 @@ function downloadExcelCustomGlobal(judul, dataArray) {
                 <tr><td colspan="7" style="border:none; height:10px;"></td></tr>
                 <tr>
                     <th class="header-th" style="width: 40px;">No.</th>
-                    <th class="header-th" style="width: 90px;">PLU</th>
-                    <th class="header-th" style="width: 130px;">Barcode</th>
-                    <th class="header-th" style="width: 280px;">Nama Item</th>
+                    <th class="header-th" style="width: 100px;">PLU</th>
+                    <th class="header-th" style="width: 140px;">Barcode</th>
+                    <th class="header-th" style="width: 300px;">Nama Item</th>
                     <th class="header-th" style="width: 90px;">QTY Fisik</th>
                     <th class="header-th" style="width: 90px;">OH</th>
                     <th class="header-th" style="width: 80px;">Selisih</th>
@@ -400,7 +399,6 @@ function downloadExcelCustomGlobal(judul, dataArray) {
         </html>
     `;
 
-    // Mengunduh file sebagai format spreadsheet (.xls / .xlsx) yang langsung dikenali styling-nya
     let blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel' });
     let url = URL.createObjectURL(blob);
     let a = document.createElement('a');
@@ -424,15 +422,17 @@ function cetakPDFGlobal(judul, dataArray) {
         <head>
             <title>${judul}</title>
             <style>
-                body { font-family: Arial, sans-serif; padding: 20px; color: #000; }
-                h2 { margin-bottom: 2px; }
-                p { margin-top: 0; color: #555; font-size: 13px; }
-                table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
-                th, td { border: 1px solid #333; padding: 6px 8px; text-align: left; }
-                th { background-color: #059669; color: white; text-align: center; }
+                body { font-family: Arial, sans-serif; padding: 20px; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                h2 { margin-bottom: 2px; text-align: center; background-color: #059669; color: white; padding: 10px; }
+                p { margin-top: 0; color: #333; font-size: 13px; text-align: center; margin-bottom: 15px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
+                th, td { border: 1px solid #333; padding: 6px 8px; }
+                th { background-color: #059669 !important; color: white !important; text-align: center; }
                 .text-center { text-align: center; }
                 .text-right { text-align: right; }
-                .total-row { font-weight: bold; background-color: #f3f4f6; }
+                .text-left { text-align: left; }
+                .total-row { font-weight: bold; background-color: #FDE047 !important; }
+                .text-red { color: #dc2626; font-weight: bold; }
             </style>
         </head>
         <body>
@@ -442,8 +442,8 @@ function cetakPDFGlobal(judul, dataArray) {
                 <thead>
                     <tr>
                         <th style="width: 40px;">No.</th>
-                        <th>PLU</th>
-                        <th>Barcode</th>
+                        <th style="width: 90px;">PLU</th>
+                        <th style="width: 120px;">Barcode</th>
                         <th>Nama Item</th>
                         <th style="width: 70px;">QTY Fisik</th>
                         <th style="width: 70px;">OH</th>
@@ -462,15 +462,17 @@ function cetakPDFGlobal(judul, dataArray) {
         let oh = item.oh ?? item.OH ?? 0;
         let selisih = item.selisih ?? item.Selisih ?? 0;
 
+        let selisihStyle = selisih !== 0 ? 'text-red' : '';
+
         htmlContent += `
             <tr>
                 <td class="text-center">${no}</td>
-                <td><b>${plu}</b></td>
-                <td>${barcode}</td>
-                <td>${nama}</td>
+                <td class="text-right">${plu}</td>
+                <td class="text-right">${barcode}</td>
+                <td class="text-left">${nama}</td>
                 <td class="text-center">${qty}</td>
                 <td class="text-center">${oh}</td>
-                <td class="text-center" style="${selisih !== 0 ? 'color: red; font-weight: bold;' : ''}">${selisih}</td>
+                <td class="text-center ${selisihStyle}">${selisih}</td>
             </tr>
         `;
     });
