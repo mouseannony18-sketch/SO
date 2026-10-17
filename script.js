@@ -189,7 +189,12 @@ function pilihMenu(jenis) {
     let judul = "";
     if (jenis === '979') {
         judul = "Menu Rak 979 (Stock Opname)";
-        bukaAreaSO();
+        // Memanggil fungsi dari file menu979.js
+        if (typeof loadMenu979 === 'function') {
+            loadMenu979();
+        } else {
+            bukaAreaSO();
+        }
     } else if (jenis === 'partial') {
         judul = "SO Reguler / Partial";
         bukaAreaSO();
