@@ -7,9 +7,9 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="dark-mode"> <!-- Default menggunakan tema gelap -->
+<body class="dark-mode">
 
-    <!-- KARTU LOGIN -->
+    <!-- KARTU LOGIN (FULL BODY TERPISAH) -->
     <div class="card" id="loginCard">
         <h3>Login Sistem</h3>
         <label>NIK:</label>
@@ -22,13 +22,12 @@
         <input type="text" id="otp" placeholder="Masukkan OTP...">
 
         <button onclick="prosesLogin()">Masuk / Ambil Token</button>
+        <button onclick="lewatiLogin()" class="skip-btn">Lewati / Masuk Tanpa Login</button>
         <p id="statusLogin"></p>
     </div>
 
-    <!-- HALAMAN UTAMA (DIBAGI HEADER & BODY UTAMA) -->
+    <!-- HALAMAN UTAMA -->
     <div class="main-layout hidden" id="mainMenuCard">
-        
-        <!-- 1. BAGIAN HEADER -->
         <header class="app-header-custom">
             <div class="header-top-row">
                 <div class="header-brand">
@@ -37,7 +36,6 @@
                 </div>
                 <div class="header-right-actions">
                     <button class="theme-toggle-btn" onclick="toggleTheme()" title="Ubah Tema">🌙</button>
-                    <!-- Tombol ini otomatis berubah jadi Login jika sesi habis -->
                     <button class="auth-action-btn logout-color" id="authBtn" onclick="handleAuthAction()">Keluar</button>
                 </div>
             </div>
@@ -49,7 +47,6 @@
             </div>
         </header>
 
-        <!-- 2. BAGIAN BODY UTAMA (MENU KOTAK BULAT) -->
         <main class="app-body-content">
             <div class="menu-grid-custom">
                 <div class="menu-box-item" onclick="pilihMenu('979')">
@@ -81,10 +78,9 @@
                 </div>
             </div>
         </main>
-
     </div>
 
-    <!-- KARTU WORKSPACE (HALAMAN PENGISIAN SO & ADMIN) -->
+    <!-- KARTU WORKSPACE -->
     <div class="card hidden" id="workspaceCard">
         <h3 id="judulMenuAktif">Workspace</h3>
         
@@ -126,12 +122,13 @@
         <button onclick="kembaliKeMenu()" class="back-btn">Kembali ke Menu Utama</button>
     </div>
 
-    <!-- MODAL POPUP PERINGATAN SESI HABIS -->
+    <!-- MODAL POPUP PERINGATAN -->
     <div id="sessionModal" class="modal-overlay hidden">
         <div class="modal-box">
             <h3>⚠️ Sesi Berakhir / Belum Login</h3>
-            <p>Maaf, sesi Anda telah habis atau Anda belum melakukan login. Stok dan data tidak dapat dimuat.</p>
+            <p>Maaf, sesi Anda telah habis atau Anda belum melakukan login. Stok dari server tidak akan disinkronisasi.</p>
             <button onclick="tutupModalLogin()">Login Sekarang</button>
+            <button onclick="tutupModalDanLanjutkan()" class="skip-modal-btn">Lanjutkan Tanpa Login</button>
         </div>
     </div>
 
