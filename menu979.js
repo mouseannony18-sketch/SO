@@ -238,8 +238,8 @@ function bersihkanPencarian() {
     inputEl.focus();
 }
 
-// Buka Kamera dengan Konfigurasi Standar yang Stabil dan Pasti Terbuka
-function bukaScannerKamera() {
+// Buka Kamera dengan Memilih Kamera Belakang Utama (Normal / Non-Wide)
+async function bukaScannerKamera() {
     let scannerBox = document.getElementById('scannerContainer');
     scannerBox.classList.remove('hidden');
     isFlashOn = false;
@@ -249,22 +249,55 @@ function bukaScannerKamera() {
         html5QrCode = new Html5Qrcode("reader");
     }
 
-    // Menggunakan konfigurasi environment standar agar kompatibel di semua jenis browser HP
-    html5QrCode.start(
-        { facingMode: "environment" },
-        { 
-            fps: 15, 
-            qrbox: { width: 260, height: 140 }
-        },
-        (decodedText) => {
-            tutupScannerKamera();
-            cariDanBukaItemDariBarcode(decodedText.trim());
-        },
-        (errorMessage) => {}
-    ).catch(err => {
-        alert("Gagal mengaktifkan kamera: " + err);
-        scannerBox.classList.add('hidden');
-    });
+    try {
+        // Dapatkan daftar seluruh kamera perangkat
+        let devices = await Html5Qrcode.getCameras();
+        if (devices && devices.length) {
+            let selectedCameraId = devices[0].id; // Default kamera pertama
+
+            // Cari kamera belakang (biasanya berlabel back, rear, atau bukan front)
+            let backCameras = devices.filter(device => {
+                let label = device.label.toLowerCase();
+                return label.includes('back') || label.includes('rear') || label.includes('belakang') || label.includes('0');
+            });
+
+            if (backCameras.length > 0) {
+                // Jika ada beberapa kamera belakang, pilih yang bukan ultra-wide (biasanya kamera utama berada di urutan awal kamera belakang)
+                selectedCameraId = backCameras[0].id;
+            }
+
+            // Jalankan scanner menggunakan ID kamera utama spesifik tersebut
+            await html5QrCode.start(
+                selectedCameraId,
+                { 
+                    fps: 20, 
+                    qrbox: { width: 260, height: 140 }
+                },
+                (decodedText) => {
+                    tutupScannerKamera();
+                    cariDanBukaItemDariBarcode(decodedText.trim());
+                },
+                (errorMessage) => {}
+            );
+        } else {
+            throw "Tidak ada kamera yang ditemukan.";
+        }
+    } catch (err) {
+        // Fallback otomatis ke environment standar jika pengambilan list kamera gagal
+        console.warn("Gagal memilih kamera spesifik, menggunakan mode default:", err);
+        html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 15, qrbox: { width: 260, height: 140 } },
+            (decodedText) => {
+                tutupScannerKamera();
+                cariDanBukaItemDariBarcode(decodedText.trim());
+            },
+            (errorMessage) => {}
+        ).catch(fallbackErr => {
+            alert("Gagal mengaktifkan kamera: " + fallbackErr);
+            scannerBox.classList.add('hidden');
+        });
+    }
 }
 
 // Kontrol LED Flash (Senter)
