@@ -162,7 +162,7 @@ function renderTabelRakBebas(listData) {
         let realIndex = dataRakBebas.findIndex(d => d.barcode === item.barcode || d.plu === item.plu);
         let selisihWarna = item.selisih !== 0 ? "color: #ef4444; font-weight: bold;" : "";
 
-        let tr = document.createElement('tr');
+                let tr = document.createElement('tr');
         tr.innerHTML = `
             <td style="text-align: center; font-size: 12px;">${idx + 1}</td>
             <td style="font-size: 12px;"><b>${item.plu || '-'}</b><br><small style="color: var(--text-muted);">${item.barcode}</small></td>
@@ -176,9 +176,10 @@ function renderTabelRakBebas(listData) {
             <td style="text-align: center; font-size: 13px;">${item.oh}</td>
             <td style="text-align: center; font-size: 13px; ${selisihWarna}">${item.selisih}</td>
             <td style="text-align: center;">
-                <button onclick="hapusItemRakBebas(${realIndex})" style="background: #dc2626; color: white; border: none; border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer;">Hapus</button>
+                <button onclick="hapusItemRakBebas(${realIndex})" style="background: #dc2626; color: white; border: none; border-radius: 4px; padding: 4px 6px; font-size: 10px; cursor: pointer;">Hapus</button>
             </td>
         `;
+
         tbody.appendChild(tr);
     });
 }
