@@ -531,3 +531,26 @@ th { background: var(--table-th); }
     margin: 0 !important;
     cursor: pointer;
 }
+/* Tombol Silang (X) di dalam Kotak Pencarian */
+.clear-search-btn {
+    position: absolute;
+    right: 8px;
+    background: #4b5563 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 50% !important;
+    width: 20px !important;
+    height: 20px !important;
+    font-size: 12px !important;
+    font-weight: bold !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+.clear-search-btn:hover {
+    background: #dc2626 !important;
+}
