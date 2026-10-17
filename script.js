@@ -216,8 +216,6 @@ function pilihMenu(jenis) {
 
     menuAktif = jenis;
     localStorage.setItem('apo_active_menu', jenis);
-
-    // Mendaftarkan riwayat state agar tombol back HP berfungsi
     history.pushState({ menu: jenis }, "", "#" + jenis);
 
     document.getElementById('mainMenuCard').classList.add('hidden');
@@ -302,4 +300,144 @@ function logout() {
     
     updateAuthButtonState(false);
     showLoginScreen();
+}
+
+// ==========================================
+// FUNGSI UNIVERSAL EKSPOR EXCEL & PDF/CETAK
+// ==========================================
+function exportUniversalReport(judulLaporan, dataArray) {
+    if (!dataArray || dataArray.length === 0) {
+        return alert('Belum ada data untuk diunduh atau dicetak!');
+    }
+
+    let pilihan = confirm(`Unduh Laporan [${judulLaporan}]?\n\n[OK] = Download Excel (.xlsx)\n[Cancel] = Cetak / Simpan ke PDF`);
+
+    if (pilihan) {
+        downloadExcelCustomGlobal(judulLaporan, dataArray);
+    } else {
+        cetakPDFGlobal(judulLaporan, dataArray);
+    }
+}
+
+function downloadExcelCustomGlobal(judul, dataArray) {
+    let todayStr = "Tanggal: " + new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    let totalQty = dataArray.reduce((sum, item) => sum + (parseInt(item.qty || item.QTY || 0)), 0);
+    let totalOh = dataArray.reduce((sum, item) => sum + (parseInt(item.oh || item.OH || 0)), 0);
+    let totalSelisih = dataArray.reduce((sum, item) => sum + (parseInt(item.selisih || item.Selisih || 0)), 0);
+
+    let sheetData = [
+        [judul],
+        [todayStr],
+        [],
+        ["No.", "PLU", "Barcode", "Nama Item", "QTY Fisik", "OH (On Hand)", "Selisih"]
+    ];
+
+    dataArray.forEach((item, index) => {
+        sheetData.push([
+            item.no || (index + 1),
+            item.plu || item.PLU || "-",
+            item.barcode || item.Barcode || "-",
+            item.namaItem || item.Nama_Item || item.nama || "-",
+            item.qty ?? item.QTY ?? 0,
+            item.oh ?? item.OH ?? 0,
+            item.selisih ?? item.Selisih ?? 0
+        ]);
+    });
+
+    sheetData.push([]);
+    sheetData.push(["TOTAL KESELURUHAN", "", "", "", totalQty, totalOh, totalSelisih]);
+
+    let ws = XLSX.utils.aoa_to_sheet(sheetData);
+    ws['!cols'] = [
+        { wch: 5 }, { wch: 10 }, { wch: 15 }, { wch: 35 }, { wch: 12 }, { wch: 12 }, { wch: 10 }
+    ];
+
+    let wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Laporan_SO");
+    XLSX.writeFile(wb, judul.replace(/[^a-zA-Z0-9]/g, "_") + ".xlsx");
+}
+
+function cetakPDFGlobal(judul, dataArray) {
+    let todayStr = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    
+    let totalQty = dataArray.reduce((sum, item) => sum + (parseInt(item.qty || item.QTY || 0)), 0);
+    let totalOh = dataArray.reduce((sum, item) => sum + (parseInt(item.oh || item.OH || 0)), 0);
+    let totalSelisih = dataArray.reduce((sum, item) => sum + (parseInt(item.selisih || item.Selisih || 0)), 0);
+
+    let htmlContent = `
+        <html>
+        <head>
+            <title>${judul}</title>
+            <style>
+                body { font-family: Arial, sans-serif; padding: 20px; color: #000; }
+                h2 { margin-bottom: 2px; }
+                p { margin-top: 0; color: #555; font-size: 13px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
+                th, td { border: 1px solid #333; padding: 6px 8px; text-align: left; }
+                th { background-color: #059669; color: white; text-align: center; }
+                .text-center { text-align: center; }
+                .text-right { text-align: right; }
+                .total-row { font-weight: bold; background-color: #f3f4f6; }
+            </style>
+        </head>
+        <body>
+            <h2>${judul}</h2>
+            <p>Tanggal: ${todayStr}</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">No.</th>
+                        <th>PLU</th>
+                        <th>Barcode</th>
+                        <th>Nama Item</th>
+                        <th style="width: 70px;">QTY Fisik</th>
+                        <th style="width: 70px;">OH</th>
+                        <th style="width: 70px;">Selisih</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    dataArray.forEach((item, index) => {
+        let no = item.no || (index + 1);
+        let plu = item.plu || item.PLU || "-";
+        let barcode = item.barcode || item.Barcode || "-";
+        let nama = item.namaItem || item.Nama_Item || item.nama || "-";
+        let qty = item.qty ?? item.QTY ?? 0;
+        let oh = item.oh ?? item.OH ?? 0;
+        let selisih = item.selisih ?? item.Selisih ?? 0;
+
+        htmlContent += `
+            <tr>
+                <td class="text-center">${no}</td>
+                <td><b>${plu}</b></td>
+                <td>${barcode}</td>
+                <td>${nama}</td>
+                <td class="text-center">${qty}</td>
+                <td class="text-center">${oh}</td>
+                <td class="text-center" style="${selisih !== 0 ? 'color: red; font-weight: bold;' : ''}">${selisih}</td>
+            </tr>
+        `;
+    });
+
+    htmlContent += `
+                <tr class="total-row">
+                    <td colspan="4" class="text-right">TOTAL KESELURUHAN:</td>
+                    <td class="text-center">${totalQty}</td>
+                    <td class="text-center">${totalOh}</td>
+                    <td class="text-center">${totalSelisih}</td>
+                </tr>
+                </tbody>
+            </table>
+            <script>
+                window.onload = function() { window.print(); }
+            </script>
+        </body>
+        </html>
+    `;
+
+    let win = window.open('', '_blank');
+    win.document.write(htmlContent);
+    win.document.close();
 }
