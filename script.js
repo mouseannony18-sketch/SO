@@ -6,10 +6,16 @@ let currentNik = "";
 window.onload = function() {
     let savedToken = localStorage.getItem('apo_token');
     let savedNik = localStorage.getItem('apo_nik');
+    let savedName = localStorage.getItem('apo_name');
+    let savedStore = localStorage.getItem('apo_store');
+
     if (savedToken && savedNik) {
         tokenGlobal = savedToken;
         currentNik = savedNik;
-        document.getElementById('userNikText').innerText = currentNik;
+        
+        document.getElementById('userNameText').innerText = savedName || "Karyawan Alfamart";
+        document.getElementById('storeNameText').innerText = savedStore || "Toko Bertugas";
+
         document.getElementById('loginCard').classList.add('hidden');
         document.getElementById('mainMenuCard').classList.remove('hidden');
     }
@@ -60,11 +66,17 @@ async function prosesLogin() {
         if(response.ok && result.success) {
             tokenGlobal = result.token;
             currentNik = nik;
+            let employeeName = result.employeeName;
+            let storeName = result.storeName;
             
             localStorage.setItem('apo_token', tokenGlobal);
             localStorage.setItem('apo_nik', currentNik);
+            localStorage.setItem('apo_name', employeeName);
+            localStorage.setItem('apo_store', storeName);
 
-            document.getElementById('userNikText').innerText = currentNik;
+            document.getElementById('userNameText').innerText = employeeName;
+            document.getElementById('storeNameText').innerText = storeName;
+
             document.getElementById('loginCard').classList.add('hidden');
             document.getElementById('mainMenuCard').classList.remove('hidden');
         } else {
@@ -83,10 +95,10 @@ function pilihMenu(jenis) {
 
     let judul = "";
     if (jenis === '979') {
-        judul = "Menu 979 (Stock Opname)";
+        judul = "Menu Rak 979 (Stock Opname)";
         bukaAreaSO();
     } else if (jenis === 'partial') {
-        judul = "Partial / Reguler SO";
+        judul = "SO Reguler / Partial";
         bukaAreaSO();
     } else if (jenis === 'bebas') {
         judul = "Rak Bebas / Customize";
@@ -169,7 +181,7 @@ async function tambahData() {
             let tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><b>${kode}</b><br><small style="color:#555;">${namaBarang}</small></td>
-                <td style="text-align: center; font-weight: bold; color: #007bff;">${qtyFisik}</td>
+                <td style="text-align: center; font-weight: bold; color: #0066cc;">${qtyFisik}</td>
                 <td style="text-align: center; color: #555;">${stokSistem}</td>
             `;
             tbody.appendChild(tr);
@@ -217,11 +229,16 @@ function exportExcel() {
 function logout() {
     localStorage.removeItem('apo_token');
     localStorage.removeItem('apo_nik');
+    localStorage.removeItem('apo_name');
+    localStorage.removeItem('apo_store');
+    
     tokenGlobal = "";
     currentNik = "";
+    
     document.getElementById('workspaceCard').classList.add('hidden');
     document.getElementById('mainMenuCard').classList.add('hidden');
     document.getElementById('loginCard').classList.remove('hidden');
+    
     document.getElementById('nik').value = '';
     document.getElementById('pin').value = '';
     document.getElementById('otp').value = '';
