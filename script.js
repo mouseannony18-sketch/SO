@@ -326,89 +326,47 @@ function downloadExcelCustomGlobal(judul, dataArray) {
     let totalOh = dataArray.reduce((sum, item) => sum + (parseInt(item.oh || item.OH || 0)), 0);
     let totalSelisih = dataArray.reduce((sum, item) => sum + (parseInt(item.selisih || item.Selisih || 0)), 0);
 
-    let htmlContent = `
-        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-        <head>
-            <meta charset="utf-8">
-            <style>
-                table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; }
-                th, td { border: 0.5pt solid #9ca3af; padding: 6px 8px; font-size: 11pt; }
-                .title { background-color: #059669; color: #ffffff; font-weight: bold; font-size: 13pt; text-align: center; vertical-align: middle; height: 35px; }
-                .subtitle { background-color: #D1FAE5; color: #065f46; font-style: italic; font-size: 10pt; height: 22px; vertical-align: middle; }
-                .header-th { background-color: #059669; color: #ffffff; font-weight: bold; text-align: center; vertical-align: middle; height: 28px; }
-                .total-tr { background-color: #FDE047; font-weight: bold; border-top: 1.5pt solid #000; border-bottom: 1.5pt solid #000; }
-                .text-center { text-align: center; }
-                .text-right { text-align: right; }
-                .text-left { text-align: left; }
-                .text-red { color: #dc2626; font-weight: bold; }
-            </style>
-        </head>
-        <body>
-            <table>
-                <tr>
-                    <td colspan="7" class="title">${judul}</td>
-                </tr>
-                <tr>
-                    <td colspan="7" class="subtitle">${todayStr}</td>
-                </tr>
-                <tr><td colspan="7" style="border:none; height:10px;"></td></tr>
-                <tr>
-                    <th class="header-th" style="width: 40px;">No.</th>
-                    <th class="header-th" style="width: 100px;">PLU</th>
-                    <th class="header-th" style="width: 140px;">Barcode</th>
-                    <th class="header-th" style="width: 300px;">Nama Item</th>
-                    <th class="header-th" style="width: 90px;">QTY Fisik</th>
-                    <th class="header-th" style="width: 90px;">OH</th>
-                    <th class="header-th" style="width: 80px;">Selisih</th>
-                </tr>
-    `;
+    // Menyusun data dalam bentuk array standar SheetJS yang 100% aman dibaca semua aplikasi Excel/Spreadsheet
+    let sheetData = [
+        [judul],
+        [todayStr],
+        [],
+        ["No.", "PLU", "Barcode", "Nama Item", "QTY Fisik", "OH (On Hand)", "Selisih"]
+    ];
 
     dataArray.forEach((item, index) => {
-        let no = item.no || (index + 1);
-        let plu = item.plu || item.PLU || "-";
-        let barcode = item.barcode || item.Barcode || "-";
-        let nama = item.namaItem || item.Nama_Item || item.nama || "-";
-        let qty = item.qty ?? item.QTY ?? 0;
-        let oh = item.oh ?? item.OH ?? 0;
-        let selisih = item.selisih ?? item.Selisih ?? 0;
-
-        let selisihStyle = selisih !== 0 ? 'text-red' : '';
-
-        htmlContent += `
-                <tr>
-                    <td class="text-center">${no}</td>
-                    <td class="text-right">${plu}</td>
-                    <td class="text-right">${barcode}</td>
-                    <td class="text-left">${nama}</td>
-                    <td class="text-center">${qty}</td>
-                    <td class="text-center">${oh}</td>
-                    <td class="text-center ${selisihStyle}">${selisih}</td>
-                </tr>
-        `;
+        sheetData.push([
+            item.no || (index + 1),
+            item.plu || item.PLU || "-",
+            item.barcode || item.Barcode || "-",
+            item.namaItem || item.Nama_Item || item.nama || "-",
+            item.qty ?? item.QTY ?? 0,
+            item.oh ?? item.OH ?? 0,
+            item.selisih ?? item.Selisih ?? 0
+        ]);
     });
 
-    htmlContent += `
-                <tr class="total-tr">
-                    <td colspan="4" class="text-right">TOTAL KESELURUHAN:</td>
-                    <td class="text-center">${totalQty}</td>
-                    <td class="text-center">${totalOh}</td>
-                    <td class="text-center">${totalSelisih}</td>
-                </tr>
-            </table>
-        </body>
-        </html>
-    `;
+    sheetData.push([]);
+    sheetData.push(["TOTAL KESELURUHAN", "", "", "", totalQty, totalOh, totalSelisih]);
 
-    let blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel' });
-    let url = URL.createObjectURL(blob);
-    let a = document.createElement('a');
-    a.href = url;
-    a.download = judul.replace(/[^a-zA-Z0-9]/g, "_") + ".xls";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    let ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+    // Pengaturan lebar kolom agar rapi
+    ws['!cols'] = [
+        { wch: 6 },   // No
+        { wch: 12 },  // PLU
+        { wch: 16 },  // Barcode
+        { wch: 38 },  // Nama Item
+        { wch: 12 },  // QTY Fisik
+        { wch: 12 },  // OH
+        { wch: 10 }   // Selisih
+    ];
+
+    let wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Laporan_SO");
+    XLSX.writeFile(wb, judul.replace(/[^a-zA-Z0-9]/g, "_") + ".xlsx");
 }
+
 
 function cetakPDFGlobal(judul, dataArray) {
     let todayStr = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
