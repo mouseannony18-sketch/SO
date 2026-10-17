@@ -18,6 +18,9 @@ window.onload = function() {
     let savedStore = localStorage.getItem('apo_store');
     let isSkipped = localStorage.getItem('apo_skipped') === 'true';
 
+    let isPageRefreshed = sessionStorage.getItem('apo_is_refreshed');
+    let activeMenu = localStorage.getItem('apo_active_menu');
+
     if ((savedToken && savedNik) || isSkipped) {
         tokenGlobal = savedToken || "";
         currentNik = savedNik || "Tamu";
@@ -31,25 +34,16 @@ window.onload = function() {
         document.getElementById('loginCard').classList.add('hidden');
         document.getElementById('sessionModal').classList.add('hidden');
 
-        // PERBAIKAN: Cek apakah halaman ini murni direload (bukan dibuka dari URL baru/luar).
-        // Kita bisa menggunakan sessionstorage atau memeriksa apakah halaman sebelumnya memang aktif.
-        // Cara paling aman: Hapus apo_active_menu saat halaman pertama kali ditutup/pindah, 
-        // atau gunakan sessionStorage untuk mendeteksi refresh vs buka tab baru.
-        let isPageRefreshed = sessionStorage.getItem('apo_is_refreshed');
-        let activeMenu = localStorage.getItem('apo_active_menu');
-
         if (isPageRefreshed && activeMenu === '979' && typeof loadMenu979 === 'function') {
             document.getElementById('mainMenuCard').classList.add('hidden');
             document.getElementById('workspaceCard').classList.remove('hidden');
             loadMenu979();
         } else {
-            // Jika ini kunjungan dari URL baru, bersihkan memori menu aktif dan arahkan ke Menu Utama
             localStorage.removeItem('apo_active_menu');
             document.getElementById('workspaceCard').classList.add('hidden');
             document.getElementById('mainMenuCard').classList.remove('hidden');
         }
 
-        // Tandai bahwa sesi halaman ini sedang aktif berjalan
         sessionStorage.setItem('apo_is_refreshed', 'true');
     } else {
         isSessionValid = false;
@@ -58,6 +52,31 @@ window.onload = function() {
     }
 };
 
+// Fungsi Global Layar Penuh (Fullscreen)
+function toggleFullScreen() {
+    let elem = document.documentElement;
+    let fsBtn = document.getElementById('fsToggleBtn');
+
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen();
+        } else if (elem.webkitRequestFullscreen) {
+            elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) {
+            elem.msRequestFullscreen();
+        }
+        if (fsBtn) fsBtn.innerText = "🗗";
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+        }
+        if (fsBtn) fsBtn.innerText = "⛶";
+    }
+}
 
 function toggleTheme() {
     if (document.body.classList.contains('dark-mode')) {
@@ -130,33 +149,13 @@ async function prosesLogin() {
         return;
     }
 
-    status.innerText = "Mendeteksi perangkat & menghubungi server...";
-
-    let userAgentAsli = navigator.userAgent;
-    let deviceModelAsli = "Android Device";
-    let match = userAgentAsli.match(/\(([^)]+)\)/);
-    if (match && match[1]) {
-        let parts = match[1].split(';');
-        for (let part of parts) {
-            part = part.trim();
-            if (part.includes('Build/') || part.length > 3 && !part.startsWith('Android') && !part.startsWith('iPhone') && !part.startsWith('Linux')) {
-                deviceModelAsli = part.split(' Build/')[0].trim();
-                break;
-            }
-        }
-    }
+    status.innerText = "Menghubungi server...";
 
     try {
         let response = await fetch('/api/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                nik, 
-                pin, 
-                otp, 
-                userAgent: userAgentAsli, 
-                deviceModel: deviceModelAsli 
-            })
+            body: JSON.stringify({ nik, pin, otp })
         });
 
         let result = await response.json();
@@ -204,7 +203,6 @@ function pilihMenu(jenis) {
     }
 
     menuAktif = jenis;
-    // Simpan status menu aktif agar tetap diingat jika halaman direload
     localStorage.setItem('apo_active_menu', jenis);
 
     document.getElementById('mainMenuCard').classList.add('hidden');
@@ -215,8 +213,6 @@ function pilihMenu(jenis) {
         judul = "Menu Rak 979 (Stock Opname)";
         if (typeof loadMenu979 === 'function') {
             loadMenu979();
-        } else {
-            bukaAreaSO();
         }
     } else if (jenis === 'partial') {
         judul = "SO Reguler / Partial";
@@ -259,142 +255,10 @@ function bukaAreaAdmin() {
 }
 
 function kembaliKeMenu() {
-    // Hapus memori menu aktif saat tombol kembali ditekan
     localStorage.removeItem('apo_active_menu');
     document.getElementById('workspaceCard').classList.add('hidden');
     document.getElementById('sessionModal').classList.add('hidden');
     document.getElementById('mainMenuCard').classList.remove('hidden');
-}
-
-async function tambahData() {
-    let savedToken = localStorage.getItem('apo_token');
-    let isSkipped = localStorage.getItem('apo_skipped') === 'true';
-
-    let kode = document.getElementById('kodeBarang').value.trim();
-    let qtyFisik = document.getElementById('qtyFisik').value;
-
-    if(!kode || !qtyFisik) {
-        alert('Isi kode barcode dan qty hitung fisik dengan benar!');
-        return;
-    }
-
-    if (!savedToken || isSkipped) {
-        dataSO.push({ 
-            Menu: menuAktif,
-            Barcode: kode, 
-            Deskripsi: "Item Manual (Tanpa Sinkronisasi)", 
-            Qty_Hitung: qtyFisik, 
-            Stok_Sistem: 0 
-        });
-
-        let tbody = document.querySelector('#tabelSO tbody');
-        let tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><b>${kode}</b><br><small style="color:var(--text-muted);">Tanpa Login (Null)</small></td>
-            <td style="text-align: center; font-weight: bold; color: #3b82f6;">${qtyFisik}</td>
-            <td style="text-align: center; color: var(--text-muted);">0</td>
-        `;
-        tbody.appendChild(tr);
-
-        document.getElementById('kodeBarang').value = '';
-        document.getElementById('qtyFisik').value = '';
-        document.getElementById('kodeBarang').focus();
-        return;
-    }
-
-    let btnTambah = event.target;
-    let originalText = btnTambah.innerText;
-    btnTambah.innerText = "Memeriksa...";
-    btnTambah.disabled = true;
-
-    try {
-        let response = await fetch('/api/scan', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                barcode: kode, 
-                token: savedToken 
-            })
-        });
-
-        let result = await response.json();
-
-        let pesanError = (result && result.message) ? result.message.toLowerCase() : "";
-        if (response.status === 401 || pesanError.includes('unauthorized') || pesanError.includes('token')) {
-            localStorage.removeItem('apo_token');
-            localStorage.removeItem('apo_nik');
-            localStorage.removeItem('apo_name');
-            localStorage.removeItem('apo_store');
-            localStorage.removeItem('apo_skipped');
-            localStorage.removeItem('apo_active_menu');
-
-            isSessionValid = false;
-            updateAuthButtonState(false);
-            
-            document.getElementById('workspaceCard').classList.add('hidden');
-            document.getElementById('sessionModal').classList.remove('hidden');
-            return;
-        }
-
-        if (response.ok && result.success) {
-            let namaBarang = result.productName;
-            let stokSistem = result.systemStock;
-            
-            dataSO.push({ 
-                Menu: menuAktif,
-                Barcode: kode, 
-                Deskripsi: namaBarang, 
-                Qty_Hitung: qtyFisik, 
-                Stok_Sistem: stokSistem 
-            });
-
-            let tbody = document.querySelector('#tabelSO tbody');
-            let tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><b>${kode}</b><br><small style="color:var(--text-muted);">${namaBarang}</small></td>
-                <td style="text-align: center; font-weight: bold; color: #3b82f6;">${qtyFisik}</td>
-                <td style="text-align: center; color: var(--text-muted);">${stokSistem}</td>
-            `;
-            tbody.appendChild(tr);
-
-            document.getElementById('kodeBarang').value = '';
-            document.getElementById('qtyFisik').value = '';
-            document.getElementById('kodeBarang').focus();
-        } else {
-            alert("Gagal memuat barang: " + (result.message || "Barang tidak ditemukan"));
-        }
-
-    } catch (error) {
-        console.error(error);
-        alert("Terjadi kesalahan jaringan saat memindai barang.");
-    } finally {
-        btnTambah.innerText = originalText;
-        btnTambah.disabled = false;
-    }
-}
-
-function simpanItemAdmin() {
-    let barcode = document.getElementById('admBarcode').value.trim();
-    let nama = document.getElementById('admNama').value.trim();
-    let ket = document.getElementById('admKet').value.trim();
-
-    if(!barcode || !nama) {
-        alert('Barcode dan Nama Barang wajib diisi!');
-        return;
-    }
-
-    alert(`Sukses! Item baru [${barcode}] - ${nama} berhasil didaftarkan ke sistem.`);
-    document.getElementById('admBarcode').value = '';
-    document.getElementById('admNama').value = '';
-    document.getElementById('admKet').value = '';
-}
-
-function exportExcel() {
-    if(dataSO.length === 0) return alert('Belum ada data!');
-    let ws = XLSX.utils.json_to_sheet(dataSO);
-    let wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "StockOpname_" + menuAktif);
-    XLSX.writeFile(wb, `StockOpname_${menuAktif}_Hasil.xlsx`);
 }
 
 function logout() {
@@ -411,9 +275,4 @@ function logout() {
     
     updateAuthButtonState(false);
     showLoginScreen();
-    
-    document.getElementById('nik').value = '';
-    document.getElementById('pin').value = '';
-    document.getElementById('otp').value = '';
-    document.getElementById('statusLogin').innerText = '';
 }
