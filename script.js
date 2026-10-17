@@ -16,8 +16,6 @@ window.onload = function() {
     let savedNik = localStorage.getItem('apo_nik');
     let savedName = localStorage.getItem('apo_name');
     let savedStore = localStorage.getItem('apo_store');
-
-    // Cek apakah user memilih mode "Skip / Tanpa Login" sebelumnya
     let isSkipped = localStorage.getItem('apo_skipped') === 'true';
 
     if ((savedToken && savedNik) || isSkipped) {
@@ -26,11 +24,12 @@ window.onload = function() {
         isSessionValid = savedToken ? true : false;
         
         document.getElementById('userNameText').innerText = savedName || (isSkipped ? "Mode Tamu (Tanpa Login)" : "Karyawan Alfamart");
-        document.getElementById('storeNameText').innerText = savedStore || "Toko Tidak Disinkronisasi";
+        document.getElementById('storeNameText').innerText = savedStore || "Sinkronisasi Server: 0 (Null)";
 
         updateAuthButtonState(isSessionValid);
 
         document.getElementById('loginCard').classList.add('hidden');
+        document.getElementById('workspaceCard').classList.add('hidden');
         document.getElementById('mainMenuCard').classList.remove('hidden');
     } else {
         isSessionValid = false;
@@ -73,13 +72,13 @@ function handleAuthAction() {
 }
 
 function showLoginScreen() {
+    // Pastikan modal tertutup dan hanya halaman login yang muncul
     document.getElementById('sessionModal').classList.add('hidden');
     document.getElementById('workspaceCard').classList.add('hidden');
     document.getElementById('mainMenuCard').classList.add('hidden');
     document.getElementById('loginCard').classList.remove('hidden');
 }
 
-// Fungsi melewati login (Mode Tamu / Null Sync)
 function lewatiLogin() {
     localStorage.setItem('apo_skipped', 'true');
     isSessionValid = false;
@@ -90,6 +89,7 @@ function lewatiLogin() {
     updateAuthButtonState(false);
 
     document.getElementById('loginCard').classList.add('hidden');
+    document.getElementById('workspaceCard').classList.add('hidden');
     document.getElementById('mainMenuCard').classList.remove('hidden');
 }
 
@@ -154,6 +154,7 @@ async function prosesLogin() {
             document.getElementById('storeNameText').innerText = storeName;
 
             document.getElementById('loginCard').classList.add('hidden');
+            document.getElementById('workspaceCard').classList.add('hidden');
             document.getElementById('mainMenuCard').classList.remove('hidden');
         } else {
             status.innerText = "Gagal: " + (result.message || "Autentikasi ditolak");
@@ -203,13 +204,11 @@ function pilihMenu(jenis) {
     document.getElementById('judulMenuAktif').innerText = judul;
 }
 
-// Tombol di dalam popup untuk menuju halaman login
 function tutupModalLogin() {
     document.getElementById('sessionModal').classList.add('hidden');
     showLoginScreen();
 }
 
-// Tombol di dalam popup untuk lanjut tanpa login (Skip mode)
 function tutupModalDanLanjutkan() {
     document.getElementById('sessionModal').classList.add('hidden');
     lewatiLogin();
@@ -225,6 +224,12 @@ function bukaAreaAdmin() {
     document.getElementById('adminFormArea').classList.remove('hidden');
 }
 
+function kembalikeMenu() {
+    document.getElementById('workspaceCard').classList.add('hidden');
+    document.getElementById('mainMenuCard').classList.remove('hidden');
+}
+
+// Alias agar tidak salah panggil
 function kembaliKeMenu() {
     document.getElementById('workspaceCard').classList.add('hidden');
     document.getElementById('mainMenuCard').classList.remove('hidden');
@@ -242,7 +247,6 @@ async function tambahData() {
         return;
     }
 
-    // Jika masuk tanpa login (Skip / Null Sync)
     if (!savedToken || isSkipped) {
         dataSO.push({ 
             Menu: menuAktif,
