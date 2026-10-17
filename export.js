@@ -1,5 +1,5 @@
 // =========================================================
-// MODUL EKSPOR EXCEL LOKAL & CETAK PDF (export.js)
+// MODUL EKSPOR EXCEL STYLING & CETAK PDF (export.js)
 // =========================================================
 
 function exportUniversalReport(judulLaporan, dataArray) {
@@ -20,7 +20,7 @@ function downloadExcelCustomGlobal(judul, dataArray) {
     try {
         let XLSXLib = window.XLSX;
         if (!XLSXLib) {
-            alert("Pustaka lokal xlsx.min.js belum terbaca. Pastikan file tersimpan di folder utama!");
+            alert("Pustaka xlsx.min.js belum dimuat dengan benar!");
             return;
         }
 
@@ -50,18 +50,18 @@ function downloadExcelCustomGlobal(judul, dataArray) {
             totalOh += oh;
             totalSelisih += selisih;
 
-            ws_data.push([no, plu, barcode, nama, qty, oh, selisih]);
+            ws_data.push([no, String(plu), String(barcode), nama, qty, oh, selisih]);
         });
 
         ws_data.push(["TOTAL KESELURUHAN:", "", "", "", totalQty, totalOh, totalSelisih]);
 
         let ws = XLSXLib.utils.aoa_to_sheet(ws_data);
 
-        // Pengaturan lebar kolom agar rapi dan tidak terpotong di HP
+        // Mengatur lebar kolom agar rapi di HP
         ws['!cols'] = [
             { wch: 6 },   // No.
-            { wch: 10 },  // PLU
-            { wch: 15 },  // Barcode
+            { wch: 12 },  // PLU
+            { wch: 16 },  // Barcode
             { wch: 35 },  // Nama Item
             { wch: 10 },  // QTY Fisik
             { wch: 8 },   // OH
@@ -70,10 +70,82 @@ function downloadExcelCustomGlobal(judul, dataArray) {
 
         let totalRowIdx = ws_data.length - 1;
         ws['!merges'] = [
-            { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // Judul Utama
-            { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }, // Tanggal
-            { s: { r: totalRowIdx, c: 0 }, e: { r: totalRowIdx, c: 3 } } // Total Keseluruhan
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, 
+            { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }, 
+            { s: { r: totalRowIdx, c: 0 }, e: { r: totalRowIdx, c: 3 } } 
         ];
+
+        // Definisi Styling Border & Warna untuk Sel
+        let borderThin = {
+            top: { style: "thin", color: { rgb: "000000" } },
+            bottom: { style: "thin", color: { rgb: "000000" } },
+            left: { style: "thin", color: { rgb: "000000" } },
+            right: { style: "thin", color: { rgb: "000000" } }
+        };
+
+        // Menerapkan styling ke setiap sel secara dinamis
+        for (let cellAddress in ws) {
+            if (cellAddress.startsWith('!')) continue;
+            let cell = ws[cellAddress];
+            let coords = XLSXLib.utils.decode_cell(cellAddress);
+            let r = coords.r;
+            let c = coords.c;
+
+            if (!cell.s) cell.s = {};
+            cell.s.border = borderThin;
+
+            // Baris Judul Utama (Baris 0)
+            if (r === 0) {
+                cell.s.fill = { fgColor: { rgb: "059669" } }; // Hijau Alfamart
+                cell.s.font = { bold: true, color: { rgb: "FFFFFF" }, sz: 12 };
+                cell.s.alignment = { horizontal: "center", vertical: "center" };
+            } 
+            // Baris Subtitle Tanggal (Baris 1)
+            else if (r === 1) {
+                cell.s.fill = { fgColor: { rgb: "D1FAE5" } }; // Hijau muda
+                cell.s.font = { italic: true, color: { rgb: "065F46" }, sz: 10 };
+                cell.s.alignment = { horizontal: "center", vertical: "center" };
+            } 
+            // Baris Header Kolom (Baris 3)
+            else if (r === 3) {
+                cell.s.fill = { fgColor: { rgb: "059669" } }; // Hijau header
+                cell.s.font = { bold: true, color: { rgb: "FFFFFF" }, sz: 10 };
+                cell.s.alignment = { horizontal: "center", vertical: "center" };
+            } 
+            // Baris Total Keseluruhan (Baris Terakhir)
+            else if (r === totalRowIdx) {
+                cell.s.fill = { fgColor: { rgb: "FDE047" } }; // Kuning terang
+                cell.s.font = { bold: true, color: { rgb: "000000" }, sz: 10 };
+                if (c >= 4) {
+                    cell.s.alignment = { horizontal: "center", vertical: "center" };
+                } else {
+                    cell.s.alignment = { horizontal: "right", vertical: "center" };
+                }
+            } 
+            // Baris Data Tabel
+            else if (r > 3) {
+                cell.s.font = { sz: 10 };
+                // Kolom No (0), QTY (4), OH (5), Selisih (6) rata tengah
+                if (c === 0 || c === 4 || c === 5 || c === 6) {
+                    cell.s.alignment = { horizontal: "center", vertical: "center" };
+                } 
+                // Kolom PLU (1) dan Barcode (2) rata kanan / center
+                else if (c === 1 || c === 2) {
+                    cell.s.alignment = { horizontal: "center", vertical: "center" };
+                    cell.t = 's'; // Pastikan terbaca teks agar barcode tidak terpotong
+                } 
+                // Kolom Nama Item (3) rata kiri
+                else {
+                    cell.s.alignment = { horizontal: "left", vertical: "center" };
+                }
+
+                // Warna merah teks jika ada selisih stok
+                if (c === 6 && typeof cell.v === 'number' && cell.v !== 0) {
+                    cell.s.font.color = { rgb: "DC2626" };
+                    cell.s.font.bold = true;
+                }
+            }
+        }
 
         let wb = XLSXLib.utils.book_new();
         XLSXLib.utils.book_append_sheet(wb, ws, "Rak_979");
