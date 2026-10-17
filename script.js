@@ -319,59 +319,51 @@ function exportUniversalReport(judulLaporan, dataArray) {
     }
 }
 
-async function downloadExcelCustomGlobal(judul, dataArray) {
-    // Pastikan pustaka xlsx-js-style termuat untuk mendukung warna, border, dan alignment
-    if (!window.XLSX || !window.XLSX.write_file) {
-        if (!document.getElementById('xlsxStyleScript')) {
-            let script = document.createElement('script');
-            script.id = 'xlsxStyleScript';
-            script.src = "https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.full.min.js";
-            document.head.appendChild(script);
-            await new Promise(resolve => script.onload = resolve);
-        }
-    }
-
+function downloadExcelCustomGlobal(judul, dataArray) {
     let todayStr = "Tanggal: " + new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
     let totalQty = dataArray.reduce((sum, item) => sum + (parseInt(item.qty || item.QTY || 0)), 0);
     let totalOh = dataArray.reduce((sum, item) => sum + (parseInt(item.oh || item.OH || 0)), 0);
     let totalSelisih = dataArray.reduce((sum, item) => sum + (parseInt(item.selisih || item.Selisih || 0)), 0);
 
-    let wb = XLSX.utils.book_new();
-    let ws = {};
+    // Membuat dokumen berbasis HTML yang didukung penuh oleh Excel / Google Sheets untuk styling warna & border
+    let htmlContent = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+            <meta charset="utf-8">
+            <style>
+                table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; }
+                th, td { border: 0.5pt solid #9ca3af; padding: 6px 8px; font-size: 11pt; }
+                .title { background-color: #059669; color: #ffffff; font-weight: bold; font-size: 14pt; text-align: center; vertical-align: middle; height: 35px; }
+                .subtitle { background-color: #D1FAE5; color: #065f46; font-style: italic; font-size: 10pt; height: 22px; vertical-align: middle; }
+                .header-th { background-color: #059669; color: #ffffff; font-weight: bold; text-align: center; vertical-align: middle; height: 28px; }
+                .total-tr { background-color: #FDE047; font-weight: bold; border-top: 1.5pt solid #000; border-bottom: 1.5pt solid #000; }
+                .text-center { text-align: center; }
+                .text-right { text-align: right; }
+                .text-left { text-align: left; }
+                .text-red { color: #dc2626; font-weight: bold; }
+            </style>
+        </head>
+        <body>
+            <table>
+                <tr>
+                    <td colspan="7" class="title">${judul}</td>
+                </tr>
+                <tr>
+                    <td colspan="7" class="subtitle">${todayStr}</td>
+                </tr>
+                <tr><td colspan="7" style="border:none; height:10px;"></td></tr>
+                <tr>
+                    <th class="header-th" style="width: 40px;">No.</th>
+                    <th class="header-th" style="width: 90px;">PLU</th>
+                    <th class="header-th" style="width: 130px;">Barcode</th>
+                    <th class="header-th" style="width: 280px;">Nama Item</th>
+                    <th class="header-th" style="width: 90px;">QTY Fisik</th>
+                    <th class="header-th" style="width: 90px;">OH</th>
+                    <th class="header-th" style="width: 80px;">Selisih</th>
+                </tr>
+    `;
 
-    // 1. Desain Judul & Tanggal (Baris 1 & 2)
-    ws['A1'] = { v: judul, s: { font: { bold: true, sz: 13, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "059669" } }, alignment: { horizontal: "center", vertical: "center" } } };
-    ws['A2'] = { v: todayStr, s: { font: { italic: true, sz: 10, color: { rgb: "333333" } }, fill: { fgColor: { rgb: "D1FAE5" } }, alignment: { horizontal: "left", vertical: "center" } } };
-
-    // Merge baris judul dari kolom A sampai G
-    ws['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
-        { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }
-    ];
-
-    // 2. Header Kolom (Baris 4)
-    let headers = ["No.", "PLU", "Barcode", "Nama Item", "QTY Fisik", "OH (On Hand)", "Selisih"];
-    headers.forEach((h, colIdx) => {
-        let cellRef = XLSX.utils.encode_cell({ r: 3, c: colIdx });
-        ws[cellRef] = {
-            v: h,
-            s: {
-                font: { bold: true, color: { rgb: "FFFFFF" }, sz: 11 },
-                fill: { fgColor: { rgb: "059669" } }, // Hijau Alfamart/Operational
-                alignment: { horizontal: "center", vertical: "center" },
-                border: {
-                    top: { style: "thin", color: { rgb: "000000" } },
-                    bottom: { style: "thin", color: { rgb: "000000" } },
-                    left: { style: "thin", color: { rgb: "000000" } },
-                    right: { style: "thin", color: { rgb: "000000" } }
-                }
-            }
-        };
-    });
-
-    // 3. Masukkan Data Item (Baris 5 dan seterusnya)
-    let currentRow = 4; // Indeks baris mulai dari 4 (baris ke-5 di Excel)
     dataArray.forEach((item, index) => {
         let no = item.no || (index + 1);
         let plu = item.plu || item.PLU || "-";
@@ -381,102 +373,44 @@ async function downloadExcelCustomGlobal(judul, dataArray) {
         let oh = item.oh ?? item.OH ?? 0;
         let selisih = item.selisih ?? item.Selisih ?? 0;
 
-        let rowData = [
-            { v: no, align: "center" },
-            { v: plu, align: "right" },
-            { v: barcode, align: "right" },
-            { v: nama, align: "left" },
-            { v: qty, align: "center" },
-            { v: oh, align: "center" },
-            { v: selisih, align: "center", bold: true, color: selisih !== 0 ? "DC2626" : "000000" }
-        ];
+        let selisihStyle = selisih !== 0 ? 'text-red' : '';
 
-        rowData.forEach((cellInfo, colIdx) => {
-            let cellRef = XLSX.utils.encode_cell({ r: currentRow, c: colIdx });
-            ws[cellRef] = {
-                v: cellInfo.v,
-                s: {
-                    font: { bold: cellInfo.bold || false, color: { rgb: cellInfo.color || "000000" }, sz: 10 },
-                    alignment: { horizontal: cellInfo.align, vertical: "center" },
-                    border: {
-                        top: { style: "thin", color: { rgb: "D1D5DB" } },
-                        bottom: { style: "thin", color: { rgb: "D1D5DB" } },
-                        left: { style: "thin", color: { rgb: "D1D5DB" } },
-                        right: { style: "thin", color: { rgb: "D1D5DB" } }
-                    }
-                }
-            };
-        });
-        currentRow++;
+        htmlContent += `
+                <tr>
+                    <td class="text-center">${no}</td>
+                    <td class="text-right">${plu}</td>
+                    <td class="text-right">${barcode}</td>
+                    <td class="text-left">${nama}</td>
+                    <td class="text-center">${qty}</td>
+                    <td class="text-center">${oh}</td>
+                    <td class="text-center ${selisihStyle}">${selisih}</td>
+                </tr>
+        `;
     });
 
-    // 4. Baris Total Keseluruhan di Bagian Bawah
-    let totalRowIdx = currentRow;
-    let totalCells = [
-        { v: "TOTAL KESELURUHAN", span: 4, align: "right" },
-        { v: totalQty, align: "center" },
-        { v: totalOh, align: "center" },
-        { v: totalSelisih, align: "center" }
-    ];
+    htmlContent += `
+                <tr class="total-tr">
+                    <td colspan="4" class="text-right">TOTAL KESELURUHAN:</td>
+                    <td class="text-center">${totalQty}</td>
+                    <td class="text-center">${totalOh}</td>
+                    <td class="text-center">${totalSelisih}</td>
+                </tr>
+            </table>
+        </body>
+        </html>
+    `;
 
-    // Gabungkan kolom A sampai D untuk teks "TOTAL KESELURUHAN"
-    ws['!merges'].push({ s: { r: totalRowIdx, c: 0 }, e: { r: totalRowIdx, c: 3 } });
-
-    let colTracker = 0;
-    totalCells.forEach((tc, idx) => {
-        let cellRef = XLSX.utils.encode_cell({ r: totalRowIdx, c: colTracker });
-        ws[cellRef] = {
-            v: tc.v,
-            s: {
-                font: { bold: true, color: { rgb: "000000" }, sz: 11 },
-                fill: { fgColor: { rgb: "FDE047" } }, // Kuning keemasan total
-                alignment: { horizontal: tc.align, vertical: "center" },
-                border: {
-                    top: { style: "medium", color: { rgb: "000000" } },
-                    bottom: { style: "medium", color: { rgb: "000000" } },
-                    left: { style: "thin", color: { rgb: "000000" } },
-                    right: { style: "thin", color: { rgb: "000000" } }
-                }
-            }
-        };
-        colTracker += (tc.span || 1);
-    });
-
-    // Isi sel kosong yang terkena merge total agar border kuningnya rapi
-    for (let c = 1; c <= 3; c++) {
-        let emptyRef = XLSX.utils.encode_cell({ r: totalRowIdx, c: c });
-        ws[emptyRef] = {
-            v: "",
-            s: {
-                border: {
-                    top: { style: "medium", color: { rgb: "000000" } },
-                    bottom: { style: "medium", color: { rgb: "000000" } },
-                    left: { style: "thin", color: { rgb: "000000" } },
-                    right: { style: "thin", color: { rgb: "000000" } }
-                },
-                fill: { fgColor: { rgb: "FDE047" } }
-            }
-        };
-    }
-
-    // Set rentang tabel worksheet
-    ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: totalRowIdx, c: 6 } });
-
-    // Atur Lebar Kolom Agar Proporsional dan Tidak Terpotong
-    ws['!cols'] = [
-        { wch: 6 },   // No
-        { wch: 12 },  // PLU
-        { wch: 16 },  // Barcode
-        { wch: 38 },  // Nama Item
-        { wch: 12 },  // QTY Fisik
-        { wch: 12 },  // OH
-        { wch: 10 }   // Selisih
-    ];
-
-    XLSX.utils.book_append_sheet(wb, ws, "Rak_979");
-    XLSX.writeFile(wb, judul.replace(/[^a-zA-Z0-9]/g, "_") + ".xlsx");
+    // Mengunduh file sebagai format spreadsheet (.xls / .xlsx) yang langsung dikenali styling-nya
+    let blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel' });
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement('a');
+    a.href = url;
+    a.download = judul.replace(/[^a-zA-Z0-9]/g, "_") + ".xls";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
-
 
 function cetakPDFGlobal(judul, dataArray) {
     let todayStr = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
