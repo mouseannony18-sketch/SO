@@ -51,11 +51,15 @@ module.exports = async function (req, res) {
             const payloadData = resData.payload || {};
             const token = payloadData.token || resData.token;
             
+            // Mengambil employeeName secara fleksibel untuk mengantisipasi perbedaan huruf besar/kecil dari API
+            const empName = payloadData.employeeName || payloadData.employeName || payloadData.name || "Karyawan Alfamart";
+            const strName = payloadData.storeName || payloadData.store_name || "Toko Bertugas";
+
             return res.status(200).json({
                 success: true,
                 token: token || "TOKEN_BERHASIL",
-                employeeName: payloadData.employeeName || "Karyawan",
-                storeName: payloadData.storeName || "Toko Alfamart"
+                employeeName: empName,
+                storeName: strName
             });
         } else {
             return res.status(400).json({
