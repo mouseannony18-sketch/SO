@@ -18,6 +18,9 @@ window.onload = function() {
     let savedStore = localStorage.getItem('apo_store');
     let isSkipped = localStorage.getItem('apo_skipped') === 'true';
 
+    // Cek apakah sebelumnya pengguna sedang membuka menu tertentu sebelum direload
+    let activeMenu = localStorage.getItem('apo_active_menu');
+
     if ((savedToken && savedNik) || isSkipped) {
         tokenGlobal = savedToken || "";
         currentNik = savedNik || "Tamu";
@@ -29,9 +32,17 @@ window.onload = function() {
         updateAuthButtonState(isSessionValid);
 
         document.getElementById('loginCard').classList.add('hidden');
-        document.getElementById('workspaceCard').classList.add('hidden');
         document.getElementById('sessionModal').classList.add('hidden');
-        document.getElementById('mainMenuCard').classList.remove('hidden');
+
+        // Jika sebelumnya sedang di Menu 979, langsung muat kembali Menu 979 secara otomatis
+        if (activeMenu === '979' && typeof loadMenu979 === 'function') {
+            document.getElementById('mainMenuCard').classList.add('hidden');
+            document.getElementById('workspaceCard').classList.remove('hidden');
+            loadMenu979();
+        } else {
+            document.getElementById('workspaceCard').classList.add('hidden');
+            document.getElementById('mainMenuCard').classList.remove('hidden');
+        }
     } else {
         isSessionValid = false;
         updateAuthButtonState(false);
@@ -73,6 +84,7 @@ function handleAuthAction() {
 }
 
 function showLoginScreen() {
+    localStorage.removeItem('apo_active_menu');
     document.getElementById('sessionModal').classList.add('hidden');
     document.getElementById('workspaceCard').classList.add('hidden');
     document.getElementById('mainMenuCard').classList.add('hidden');
@@ -183,13 +195,15 @@ function pilihMenu(jenis) {
     }
 
     menuAktif = jenis;
+    // Simpan status menu aktif agar tetap diingat jika halaman direload
+    localStorage.setItem('apo_active_menu', jenis);
+
     document.getElementById('mainMenuCard').classList.add('hidden');
     document.getElementById('workspaceCard').classList.remove('hidden');
 
     let judul = "";
     if (jenis === '979') {
         judul = "Menu Rak 979 (Stock Opname)";
-        // Memanggil fungsi dari file menu979.js
         if (typeof loadMenu979 === 'function') {
             loadMenu979();
         } else {
@@ -236,6 +250,8 @@ function bukaAreaAdmin() {
 }
 
 function kembaliKeMenu() {
+    // Hapus memori menu aktif saat tombol kembali ditekan
+    localStorage.removeItem('apo_active_menu');
     document.getElementById('workspaceCard').classList.add('hidden');
     document.getElementById('sessionModal').classList.add('hidden');
     document.getElementById('mainMenuCard').classList.remove('hidden');
@@ -294,20 +310,18 @@ async function tambahData() {
 
         let result = await response.json();
 
-        // Tangkap pesan error Unauthorized atau token tidak valid dari server pusat
         let pesanError = (result && result.message) ? result.message.toLowerCase() : "";
         if (response.status === 401 || pesanError.includes('unauthorized') || pesanError.includes('token')) {
-            // Reset total localStorage terkait sesi login
             localStorage.removeItem('apo_token');
             localStorage.removeItem('apo_nik');
             localStorage.removeItem('apo_name');
             localStorage.removeItem('apo_store');
             localStorage.removeItem('apo_skipped');
+            localStorage.removeItem('apo_active_menu');
 
             isSessionValid = false;
             updateAuthButtonState(false);
             
-            // Sembunyikan workspace dan tampilkan modal popup custom kita
             document.getElementById('workspaceCard').classList.add('hidden');
             document.getElementById('sessionModal').classList.remove('hidden');
             return;
@@ -380,6 +394,7 @@ function logout() {
     localStorage.removeItem('apo_name');
     localStorage.removeItem('apo_store');
     localStorage.removeItem('apo_skipped');
+    localStorage.removeItem('apo_active_menu');
     
     tokenGlobal = "";
     currentNik = "";
