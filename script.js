@@ -2,8 +2,17 @@ let tokenGlobal = "";
 let dataSO = [];
 let menuAktif = "";
 let currentNik = "";
+let isSessionValid = true;
 
 window.onload = function() {
+    // Muat preferensi tema terakhir
+    let savedTheme = localStorage.getItem('apo_theme') || 'dark';
+    if (savedTheme === 'light') {
+        document.body.classList.remove('dark-mode');
+        document.body.classList.add('light-mode');
+        document.querySelector('.theme-toggle-btn').innerText = '☀️';
+    }
+
     let savedToken = localStorage.getItem('apo_token');
     let savedNik = localStorage.getItem('apo_nik');
     let savedName = localStorage.getItem('apo_name');
@@ -12,14 +21,64 @@ window.onload = function() {
     if (savedToken && savedNik) {
         tokenGlobal = savedToken;
         currentNik = savedNik;
+        isSessionValid = true;
         
         document.getElementById('userNameText').innerText = savedName || "Karyawan Alfamart";
         document.getElementById('storeNameText').innerText = savedStore || "Toko Bertugas";
 
+        // Ubah tombol jadi Logout karena sesi aktif
+        updateAuthButtonState(true);
+
         document.getElementById('loginCard').classList.add('hidden');
         document.getElementById('mainMenuCard').classList.remove('hidden');
+    } else {
+        // Jika belum login atau sesi kosong
+        isSessionValid = false;
+        updateAuthButtonState(false);
     }
 };
+
+// Fungsi Toggle Dark/Light Mode
+function toggleTheme() {
+    if (document.body.classList.contains('dark-mode')) {
+        document.body.classList.remove('dark-mode');
+        document.body.classList.add('light-mode');
+        document.querySelector('.theme-toggle-btn').innerText = '☀️';
+        localStorage.setItem('apo_theme', 'light');
+    } else {
+        document.body.classList.remove('light-mode');
+        document.body.classList.add('dark-mode');
+        document.querySelector('.theme-toggle-btn').innerText = '🌙';
+        localStorage.setItem('apo_theme', 'dark');
+    }
+}
+
+// Mengatur status tombol header (Keluar vs Login)
+function updateAuthButtonState(isValid) {
+    let authBtn = document.getElementById('authBtn');
+    if (isValid) {
+        authBtn.innerText = "Keluar";
+        authBtn.className = "auth-action-btn logout-color";
+    } else {
+        authBtn.innerText = "Login";
+        authBtn.className = "auth-action-btn login-color";
+    }
+}
+
+// Aksi ketika tombol di header diklik (Bisa Logout atau pindah ke halaman Login)
+function handleAuthAction() {
+    if (isSessionValid) {
+        logout();
+    } else {
+        showLoginScreen();
+    }
+}
+
+function showLoginScreen() {
+    document.getElementById('workspaceCard').classList.add('hidden');
+    document.getElementById('mainMenuCard').classList.add('hidden');
+    document.getElementById('loginCard').classList.remove('hidden');
+}
 
 async function prosesLogin() {
     let nik = document.getElementById('nik').value.trim();
@@ -74,6 +133,9 @@ async function prosesLogin() {
             localStorage.setItem('apo_name', employeeName);
             localStorage.setItem('apo_store', storeName);
 
+            isSessionValid = true;
+            updateAuthButtonState(true);
+
             document.getElementById('userNameText').innerText = employeeName;
             document.getElementById('storeNameText').innerText = storeName;
 
@@ -89,6 +151,15 @@ async function prosesLogin() {
 }
 
 function pilihMenu(jenis) {
+    // Cek validitas sesi sebelum masuk menu
+    let savedToken = localStorage.getItem('apo_token');
+    if (!savedToken) {
+        isSessionValid = false;
+        updateAuthButtonState(false);
+        document.getElementById('sessionModal').classList.remove('hidden');
+        return;
+    }
+
     menuAktif = jenis;
     document.getElementById('mainMenuCard').classList.add('hidden');
     document.getElementById('workspaceCard').classList.remove('hidden');
@@ -117,6 +188,11 @@ function pilihMenu(jenis) {
     document.getElementById('judulMenuAktif').innerText = judul;
 }
 
+function tutupModalLogin() {
+    document.getElementById('sessionModal').classList.add('hidden');
+    showLoginScreen();
+}
+
 function bukaAreaSO() {
     document.getElementById('soFormArea').classList.remove('hidden');
     document.getElementById('adminFormArea').classList.add('hidden');
@@ -133,18 +209,19 @@ function kembaliKeMenu() {
 }
 
 async function tambahData() {
+    let savedToken = localStorage.getItem('apo_token');
+    if (!savedToken) {
+        isSessionValid = false;
+        updateAuthButtonState(false);
+        document.getElementById('sessionModal').classList.remove('hidden');
+        return;
+    }
+
     let kode = document.getElementById('kodeBarang').value.trim();
     let qtyFisik = document.getElementById('qtyFisik').value;
 
     if(!kode || !qtyFisik) {
         alert('Isi kode barcode dan qty hitung fisik dengan benar!');
-        return;
-    }
-
-    let savedToken = localStorage.getItem('apo_token');
-    if (!savedToken) {
-        alert('Sesi habis, silakan login ulang.');
-        logout();
         return;
     }
 
@@ -165,6 +242,15 @@ async function tambahData() {
 
         let result = await response.json();
 
+        // Jika server menolak karena token kedaluwarsa/tidak valid
+        if (response.status === 401 || (result && result.message && result.message.toLowerCase().includes('token'))) {
+            localStorage.removeItem('apo_token');
+            isSessionValid = false;
+            updateAuthButtonState(false);
+            document.getElementById('sessionModal').classList.remove('hidden');
+            return;
+        }
+
         if (response.ok && result.success) {
             let namaBarang = result.productName;
             let stokSistem = result.systemStock;
@@ -180,9 +266,9 @@ async function tambahData() {
             let tbody = document.querySelector('#tabelSO tbody');
             let tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><b>${kode}</b><br><small style="color:#555;">${namaBarang}</small></td>
-                <td style="text-align: center; font-weight: bold; color: #0066cc;">${qtyFisik}</td>
-                <td style="text-align: center; color: #555;">${stokSistem}</td>
+                <td><b>${kode}</b><br><small style="color:var(--text-muted);">${namaBarang}</small></td>
+                <td style="text-align: center; font-weight: bold; color: #3b82f6;">${qtyFisik}</td>
+                <td style="text-align: center; color: var(--text-muted);">${stokSistem}</td>
             `;
             tbody.appendChild(tr);
 
@@ -234,6 +320,9 @@ function logout() {
     
     tokenGlobal = "";
     currentNik = "";
+    isSessionValid = false;
+    
+    updateAuthButtonState(false);
     
     document.getElementById('workspaceCard').classList.add('hidden');
     document.getElementById('mainMenuCard').classList.add('hidden');
