@@ -2,6 +2,7 @@ const CSV_URL = "https://docs.google.com/spreadsheets/d/15Albul63206zfgQ8vaa0krg
 
 let dataMenu979 = [];
 const STORAGE_KEY_979 = "apo_data_menu_979";
+let currentIndexAktif = null;
 
 async function loadMenu979() {
     let container = document.getElementById('workspaceCard');
@@ -24,7 +25,7 @@ async function loadMenu979() {
                         <th style="width: 40px;">#</th>
                         <th>PLU / Barcode</th>
                         <th>Nama Item</th>
-                        <th style="text-align: center; width: 130px;">QTY (Fisik)</th>
+                        <th style="text-align: center; width: 110px;">QTY (Fisik)</th>
                         <th style="text-align: center; width: 50px;">OH</th>
                         <th style="text-align: center; width: 60px;">Selisih</th>
                     </tr>
@@ -39,6 +40,41 @@ async function loadMenu979() {
         </div>
         <button onclick="kembaliKeMenu()" class="back-btn" style="padding: 12px;">Kembali ke Menu Utama</button>
     `;
+
+    // Tambahkan elemen HTML Popup ke body jika belum ada
+    if (!document.getElementById('popupQtyModal')) {
+        let modalDiv = document.createElement('div');
+        modalDiv.id = 'popupQtyModal';
+        modalDiv.className = 'qty-modal-overlay hidden';
+        modalDiv.innerHTML = `
+            <div class="qty-modal-box">
+                <div class="modal-badge">📍 RAK 979</div>
+                <h4 id="modalNamaItem" class="modal-title-text">-</h4>
+                <div class="modal-info-row">
+                    <span class="modal-chip plu">PLU <b id="modalPluText">-</b></span>
+                    <span class="modal-chip barcode">Barcode <b id="modalBarcodeText">-</b></span>
+                </div>
+                
+                <div class="modal-input-container">
+                    <div class="modal-qty-info">
+                        <span>Qty Tersimpan saat ini: <b id="modalCurrentQty" style="color: #38bdf8;">0</b></span>
+                    </div>
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-top: 8px; text-align: left;">Masukkan Qty Tambahan (Ditempat Lain):</label>
+                    <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
+                        <button onclick="ubahNilaiInputPopup(-1)" class="popup-adj-btn">-</button>
+                        <input type="number" id="modalInputTambah" value="0" class="modal-input-field" />
+                        <button onclick="ubahNilaiInputPopup(1)" class="popup-adj-btn">+</button>
+                    </div>
+                </div>
+
+                <div class="modal-btn-group">
+                    <button onclick="tutupPopupQty()" class="modal-close-btn">Batal</button>
+                    <button onclick="simpanQtyTambah()" class="modal-save-btn">✓ Simpan & Jumlahkan</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modalDiv);
+    }
 
     try {
         let response = await fetch(CSV_URL);
@@ -97,7 +133,7 @@ function parseCSVData(text) {
     renderTabel979();
     
     if (savedLocalData) {
-        document.getElementById('statusLoad979').innerText = `Memuat ${dataMenu979.length} item dari memori tersimpan. Klik "Sync Stok Server" untuk memperbarui stok.`;
+        document.getElementById('statusLoad979').innerText = `Memuat ${dataMenu979.length} item dari memori tersimpan.`;
     } else {
         document.getElementById('statusLoad979').innerText = `Total ${dataMenu979.length} item dimuat. Menyinkronkan stok server...`;
         sinkronisasiStokServer(false);
@@ -115,11 +151,10 @@ function renderTabel979() {
             <td style="text-align: center; font-size: 12px;">${item.no}</td>
             <td style="font-size: 12px;"><b>${item.plu}</b><br><small style="color: var(--text-muted);">${item.barcode}</small></td>
             <td style="font-size: 12px;">${item.namaItem}</td>
-            <td style="text-align: center; white-space: nowrap;">
-                <div class="qty-control-group">
-                    <button onclick="ubahQty(${index}, -1)" class="qty-btn-adjust">-</button>
-                    <input type="number" id="qty-input-${index}" value="${item.qty}" onchange="updateQtyManual(${index}, this.value)" class="qty-input-box" />
-                    <button onclick="ubahQty(${index}, 1)" class="qty-btn-adjust">+</button>
+            <td style="text-align: center;">
+                <div onclick="bukaPopupQty(${index})" class="qty-pill-box" title="Klik untuk tambah/hitung ulang">
+                    <span id="qty-text-${index}" style="font-weight: bold; font-size: 14px; color: #38bdf8;">${item.qty}</span>
+                    <small style="font-size: 9px; display: block; color: var(--text-muted);">ketuk edit</small>
                 </div>
             </td>
             <td style="text-align: center; font-size: 13px;" id="oh-val-${index}">${item.oh}</td>
@@ -129,36 +164,65 @@ function renderTabel979() {
     });
 }
 
-function ubahQty(index, delta) {
-    let inputEl = document.getElementById(`qty-input-${index}`);
+// Buka Popup Qty
+function bukaPopupQty(index) {
+    currentIndexAktif = index;
+    let item = dataMenu979[index];
+
+    document.getElementById('modalNamaItem').innerText = item.namaItem;
+    document.getElementById('modalPluText').innerText = item.plu;
+    document.getElementById('modalBarcodeText').innerText = item.barcode;
+    document.getElementById('modalCurrentQty').innerText = item.qty;
+    document.getElementById('modalInputTambah').value = "0";
+
+    document.getElementById('popupQtyModal').classList.remove('hidden');
+    document.getElementById('modalInputTambah').focus();
+    document.getElementById('modalInputTambah').select();
+}
+
+function tutupPopupQty() {
+    document.getElementById('popupQtyModal').classList.add('hidden');
+    currentIndexAktif = null;
+}
+
+function ubahNilaiInputPopup(delta) {
+    let inputEl = document.getElementById('modalInputTambah');
     let val = parseInt(inputEl.value) || 0;
     val += delta;
     if (val < 0) val = 0;
-
     inputEl.value = val;
-    updateQtyManual(index, val);
 }
 
-function updateQtyManual(index, value) {
-    let val = parseInt(value) || 0;
-    if (val < 0) val = 0;
+// Simpan & Jumlahkan Qty Lama + Qty Tambahan Baru
+function simpanQtyTambah() {
+    if (currentIndexAktif === null) return;
 
-    dataMenu979[index].qty = val;
-    dataMenu979[index].selisih = dataMenu979[index].qty - dataMenu979[index].oh;
+    let inputTambah = parseInt(document.getElementById('modalInputTambah').value) || 0;
+    let item = dataMenu979[currentIndexAktif];
 
-    let selisihEl = document.getElementById(`selisih-val-${index}`);
-    selisihEl.innerText = dataMenu979[index].selisih;
+    // Qty baru = Qty lama yang sudah tersimpan + Qty tambahan baru
+    item.qty += inputTambah;
+    if (item.qty < 0) item.qty = 0;
+
+    item.selisih = item.qty - item.oh;
+
+    // Update tampilan tabel baris tersebut
+    document.getElementById(`qty-text-${currentIndexAktif}`).innerText = item.qty;
+    let selisihEl = document.getElementById(`selisih-val-${currentIndexAktif}`);
+    selisihEl.innerText = item.selisih;
     
-    if (dataMenu979[index].selisih !== 0) {
+    if (item.selisih !== 0) {
         selisihEl.style.color = "#ef4444";
     } else {
         selisihEl.style.color = "inherit";
     }
 
+    // Simpan ke localStorage
     localStorage.setItem(STORAGE_KEY_979, JSON.stringify(dataMenu979));
+
+    tutupPopupQty();
 }
 
-// Fungsi sinkronisasi stok server (bisa dipanggil otomatis atau lewat tombol manual)
 async function sinkronisasiStokServer(isManual = false) {
     let savedToken = localStorage.getItem('apo_token');
     let isSkipped = localStorage.getItem('apo_skipped') === 'true';
@@ -190,7 +254,6 @@ async function sinkronisasiStokServer(isManual = false) {
             let result = await response.json();
             if (response.ok && result.success) {
                 item.oh = parseInt(result.systemStock) || 0;
-                // Hitung ulang selisih berdasarkan Qty fisik saat ini dan OH terbaru
                 item.selisih = item.qty - item.oh;
                 
                 let ohEl = document.getElementById(`oh-val-${i}`);
