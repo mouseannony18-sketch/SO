@@ -257,7 +257,6 @@ function pilihMenu(jenis) {
     if (mainMenuCard) mainMenuCard.classList.add('hidden');
     if (workspaceCard) workspaceCard.classList.remove('hidden');
 
-    // Sembunyikan semua container sub-menu agar tidak tumpang tindih
     let menu979Container = document.getElementById('menu979Container');
     let menuBebasContainer = document.getElementById('menuBebasContainer');
     let soArea = document.getElementById('soFormArea');
@@ -303,13 +302,24 @@ function setupWorkspaceHeader(judul, subtitle, showSyncButton = false, customAct
     if (extraSlot) {
         let htmlContent = "";
         if (showSyncButton) {
-            htmlContent += `<button onclick="if(typeof sinkronisasiStokServer === 'function') sinkronisasiStokServer(true);">🔄 Sync Server</button>`;
+            htmlContent += `<button onclick="triggerSyncServerGlobal()">🔄 Sync Server</button>`;
         }
-        if (typeof exportExcel979 === 'function' && (judul.includes("979") || judul.includes("Rak"))) {
+        
+        if (typeof exportExcel979 === 'function' && (judul.includes("979") || judul.includes("Rak")) && !customActionHTML.includes("Download")) {
             htmlContent += `<button onclick="exportExcel979()">📥 Download / Cetak</button>`;
         }
+        
         htmlContent += customActionHTML;
         extraSlot.innerHTML = htmlContent;
+    }
+}
+
+// Pengarah fungsi Sync Server otomatis berdasarkan menu yang sedang dibuka
+function triggerSyncServerGlobal() {
+    if (menuAktif === '979' && typeof sinkronisasiStokServer979 === 'function') {
+        sinkronisasiStokServer979(true);
+    } else if (menuAktif === 'bebas' && typeof sinkronisasiStokServerBebas === 'function') {
+        sinkronisasiStokServerBebas(true);
     }
 }
 
