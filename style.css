@@ -659,6 +659,28 @@ th { background: var(--table-th); }
     align-items: center;
 }
 
+/* Kotak Pencarian diatur menjadi 75% */
+.search-box-wrapper {
+    flex: 0 0 75%;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+/* Tombol Scan diatur menjadi sekitar 20% (sisa ruang otomatis) */
+.scan-btn {
+    flex: 0 0 calc(25% - 8px);
+    background: #059669 !important;
+    color: white !important;
+    height: 38px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    border-radius: 8px !important;
+    border: none !important;
+    cursor: pointer !important;
+    margin: 0 !important;
+}
+
 .action-top-btn {
     flex: 1;
     height: 38px !important;
@@ -678,11 +700,4 @@ th { background: var(--table-th); }
 .selisih-btn {
     background: #2563eb !important;
     color: white !important;
-}
-
-.scan-btn {
-    background: #059669 !important;
-    color: white !important;
-    width: 80px !important;
-    flex-shrink: 0;
 }
