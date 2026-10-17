@@ -3,6 +3,7 @@ const CSV_URL = "https://docs.google.com/spreadsheets/d/15Albul63206zfgQ8vaa0krg
 let dataMenu979 = [];
 const STORAGE_KEY_979 = "apo_data_menu_979";
 let currentIndexAktif = null;
+let html5QrCode = null; // Variabel scanner kamera
 
 async function loadMenu979() {
     let container = document.getElementById('workspaceCard');
@@ -12,12 +13,32 @@ async function loadMenu979() {
     container.style.minHeight = "100vh";
 
     container.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <h3 style="font-size: 18px; margin: 0;">Menu Rak 979 (Stock Opname)</h3>
-            <button onclick="sinkronisasiStokServer(true)" style="background: #2563eb; width: auto; padding: 6px 12px; font-size: 12px; margin: 0;" title="Perbarui stok sistem dari server">🔄 Sync Stok Server</button>
+            <button onclick="sinkronisasiStokServer(true)" style="background: #2563eb; width: auto; padding: 6px 12px; font-size: 12px; margin: 0;" title="Perbarui stok sistem dari server">🔄 Sync Server</button>
         </div>
-        <p id="statusLoad979" style="text-align: center; color: var(--text-muted); font-size: 12px; margin-bottom: 15px;">Memuat data master...</p>
         
+        <!-- 3 MENU UTAMA BARU: PENCARIAN, SCAN KAMERA, RESET -->
+        <div class="top-action-bar">
+            <div class="search-box-wrapper">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="inputCariItem" oninput="filterPencarianRealtime(this.value)" placeholder="Cari PLU / Barcode / Nama..." class="modern-search-input" />
+            </div>
+            <button onclick="bukaScannerKamera()" class="action-top-btn scan-btn" title="Scan Barcode via Kamera">📷 Scan</button>
+            <button onclick="konfirmasiResetData()" class="action-top-btn reset-btn" title="Reset Semua Data Qty">🗑️ Reset</button>
+        </div>
+
+        <p id="statusLoad979" style="text-align: center; color: var(--text-muted); font-size: 12px; margin-bottom: 10px;">Memuat data master...</p>
+        
+        <!-- AREA SCANNER KAMERA (TERSEMBUNYI SECARA DEFAULT) -->
+        <div id="scannerContainer" class="scanner-box hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <b style="font-size: 12px; color: #38bdf8;">Arahkan Kamera ke Barcode Barang</b>
+                <button onclick="tutupScannerKamera()" class="close-scanner-btn">Tutup Kamera</button>
+            </div>
+            <div id="reader"></div>
+        </div>
+
         <div class="table-full-container">
             <table id="tabelMenu979">
                 <thead>
@@ -30,18 +51,25 @@ async function loadMenu979() {
                         <th style="text-align: center; width: 60px;">Selisih</th>
                     </tr>
                 </thead>
-                <tbody></tbody>
+                <tbody id="tbodyMenu979"></tbody>
             </table>
         </div>
 
         <div style="display: flex; gap: 10px; margin-top: 15px;">
             <button onclick="exportExcel979()" class="excel-btn" style="flex: 1; margin:0; padding: 12px;">Download Excel</button>
-            <button onclick="filterSelisih979()" style="background: #f59e0b; flex: 1; margin:0; padding: 12px;">Filter Selisih</button>
+            <button onclick="filterSelisihToggle()" id="btnFilterSelisih" style="background: #f59e0b; flex: 1; margin:0; padding: 12px;">Filter Selisih</button>
         </div>
         <button onclick="kembaliKeMenu()" class="back-btn" style="padding: 12px;">Kembali ke Menu Utama</button>
     `;
 
-    // Elemen HTML Popup Modern (Melayang di tengah/bawah layar)
+    // Pastikan pustaka HTML5 QR Code dimuat secara dinamis untuk fitur kamera scanner
+    if (!window.Html5Qrcode) {
+        let scriptTag = document.createElement('script');
+        scriptTag.src = "https://unpkg.com/html5-qrcode";
+        document.head.appendChild(scriptTag);
+    }
+
+    // Elemen HTML Popup Modern
     if (!document.getElementById('popupQtyModal')) {
         let modalDiv = document.createElement('div');
         modalDiv.id = 'popupQtyModal';
@@ -135,7 +163,7 @@ function parseCSVData(text) {
     }
 
     dataMenu979 = masterItems;
-    renderTabel979();
+    renderTabel979(dataMenu979);
     
     if (savedLocalData) {
         document.getElementById('statusLoad979').innerText = `Memuat ${dataMenu979.length} item dari memori tersimpan.`;
@@ -145,28 +173,115 @@ function parseCSVData(text) {
     }
 }
 
-function renderTabel979() {
-    let tbody = document.querySelector('#tabelMenu979 tbody');
+function renderTabel979(listData) {
+    let tbody = document.getElementById('tbodyMenu979');
+    if (!tbody) return;
     tbody.innerHTML = "";
 
-    dataMenu979.forEach((item, index) => {
-        let tr = document.createElement('tr');
+    listData.forEach((item) => {
+        // Cari index asli item di array utama `dataMenu979`
+        let realIndex = dataMenu979.findIndex(d => d.plu === item.plu);
         let selisihWarna = item.selisih !== 0 ? "color: #ef4444;" : "";
+        
+        let tr = document.createElement('tr');
         tr.innerHTML = `
             <td style="text-align: center; font-size: 12px;">${item.no}</td>
             <td style="font-size: 12px;"><b>${item.plu}</b><br><small style="color: var(--text-muted);">${item.barcode}</small></td>
             <td style="font-size: 12px;">${item.namaItem}</td>
             <td style="text-align: center;">
-                <div onclick="bukaPopupQty(${index})" class="qty-pill-box" title="Klik untuk tambah/hitung ulang">
-                    <span id="qty-text-${index}" style="font-weight: bold; font-size: 14px; color: #38bdf8;">${item.qty}</span>
+                <div onclick="bukaPopupQty(${realIndex})" class="qty-pill-box" title="Klik untuk tambah/hitung ulang">
+                    <span id="qty-text-${realIndex}" style="font-weight: bold; font-size: 14px; color: #38bdf8;">${item.qty}</span>
                     <small style="font-size: 9px; display: block; color: var(--text-muted);">ketuk edit</small>
                 </div>
             </td>
-            <td style="text-align: center; font-size: 13px;" id="oh-val-${index}">${item.oh}</td>
-            <td style="text-align: center; font-size: 13px; font-weight: bold; ${selisihWarna}" id="selisih-val-${index}">${item.selisih}</td>
+            <td style="text-align: center; font-size: 13px;" id="oh-val-${realIndex}">${item.oh}</td>
+            <td style="text-align: center; font-size: 13px; font-weight: bold; ${selisihWarna}" id="selisih-val-${realIndex}">${item.selisih}</td>
         `;
         tbody.appendChild(tr);
     });
+}
+
+// 1. FITUR PENCARIAN REAL-TIME
+function filterPencarianRealtime(keyword) {
+    let query = keyword.toLowerCase().trim();
+    if (!query) {
+        renderTabel979(dataMenu979);
+        return;
+    }
+
+    let filtered = dataMenu979.filter(item => 
+        item.plu.toLowerCase().includes(query) ||
+        item.barcode.toLowerCase().includes(query) ||
+        item.namaItem.toLowerCase().includes(query)
+    );
+
+    renderTabel979(filtered);
+}
+
+// 2. FITUR SCANNER BARCODE KAMERA
+function bukaScannerKamera() {
+    let scannerBox = document.getElementById('scannerContainer');
+    scannerBox.classList.remove('hidden');
+
+    if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("reader");
+    }
+
+    html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 150 } },
+        (decodedText) => {
+            // Barcode berhasil terbaca!
+            tutupScannerKamera();
+            cariDanBukaItemDariBarcode(decodedText.trim());
+        },
+        (errorMessage) => {
+            // Error scan abaikan agar tidak mengganggu
+        }
+    ).catch(err => {
+        alert("Gagal mengaktifkan kamera: " + err);
+        scannerBox.classList.add('hidden');
+    });
+}
+
+function tutupScannerKamera() {
+    let scannerBox = document.getElementById('scannerContainer');
+    scannerBox.classList.add('hidden');
+
+    if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().then(() => {
+            html5QrCode.clear();
+        }).catch(err => console.error(err));
+    }
+}
+
+// Mencocokkan hasil scan kamera dengan daftar item SO 979
+function cariDanBukaItemDariBarcode(scannedBarcode) {
+    let foundIndex = dataMenu979.findIndex(item => item.barcode === scannedBarcode);
+    if (foundIndex !== -1) {
+        // Kosongkan pencarian jika ada agar baris terlihat, lalu buka popup qty
+        document.getElementById('inputCariItem').value = "";
+        renderTabel979(dataMenu979);
+        bukaPopupQty(foundIndex);
+    } else {
+        alert(`Barcode [${scannedBarcode}] tidak ditemukan di dalam Daftar Master Rak 979 ini.`);
+    }
+}
+
+// 3. FITUR RESET DATA
+function konfirmasiResetData() {
+    let konfirmasi = confirm("PERINGATAN: Apakah Anda yakin ingin mereset semua data Qty fisik dan stok sistem yang tersimpan? Tindakan ini tidak dapat dibatalkan.");
+    if (konfirmasi) {
+        localStorage.removeItem(STORAGE_KEY_979);
+        dataMenu979.forEach(item => {
+            item.qty = 0;
+            item.oh = 0;
+            item.selisih = 0;
+        });
+        renderTabel979(dataMenu979);
+        document.getElementById('statusLoad979').innerText = "Data berhasil direset menjadi 0.";
+        alert("Semua data Qty berhasil direset!");
+    }
 }
 
 function bukaPopupQty(index) {
@@ -208,14 +323,17 @@ function simpanQtyTambah() {
 
     item.selisih = item.qty - item.oh;
 
-    document.getElementById(`qty-text-${currentIndexAktif}`).innerText = item.qty;
+    let qtySpan = document.getElementById(`qty-text-${currentIndexAktif}`);
+    if (qtySpan) qtySpan.innerText = item.qty;
+
     let selisihEl = document.getElementById(`selisih-val-${currentIndexAktif}`);
-    selisihEl.innerText = item.selisih;
-    
-    if (item.selisih !== 0) {
-        selisihEl.style.color = "#ef4444";
-    } else {
-        selisihEl.style.color = "inherit";
+    if (selisihEl) {
+        selisihEl.innerText = item.selisih;
+        if (item.selisih !== 0) {
+            selisihEl.style.color = "#ef4444";
+        } else {
+            selisihEl.style.color = "inherit";
+        }
     }
 
     localStorage.setItem(STORAGE_KEY_979, JSON.stringify(dataMenu979));
@@ -281,19 +399,20 @@ async function sinkronisasiStokServer(isManual = false) {
     }
 }
 
-let hanyaSelisih = false;
-function filterSelisih979() {
-    hanyaSelisih = !hanyaSelisih;
-    let tbody = document.querySelector('#tabelMenu979 tbody');
-    let rows = tbody.getElementsByTagName('tr');
+let statusFilterSelisih = false;
+function filterSelisihToggle() {
+    statusFilterSelisih = !statusFilterSelisih;
+    let btn = document.getElementById('btnFilterSelisih');
 
-    for (let i = 0; i < rows.length; i++) {
-        let selisihVal = parseInt(document.getElementById(`selisih-val-${i}`).innerText);
-        if (hanyaSelisih && selisihVal === 0) {
-            rows[i].style.display = "none";
-        } else {
-            rows[i].style.display = "";
-        }
+    if (statusFilterSelisih) {
+        btn.style.background = "#dc2626";
+        btn.innerText = "Tampilkan Semua";
+        let filtered = dataMenu979.filter(item => item.selisih !== 0);
+        renderTabel979(filtered);
+    } else {
+        btn.style.background = "#f59e0b";
+        btn.innerText = "Filter Selisih";
+        renderTabel979(dataMenu979);
     }
 }
 
