@@ -102,9 +102,9 @@ async function loadMenuRakBebas() {
 
                 <div class="modern-input-box-area">
                     <div class="modern-current-label">
-                        Qty Tersimpan Saat Ini: <span id="modalCurrentQtyBebas">0</span>
+                        Qty Tersimpan: <span id="modalCurrentQtyBebas">0</span>
                     </div>
-                    <label class="modern-input-label">Atur Qty Fisik (Timpa / Ubah):</label>
+                    <label class="modern-input-label">Tambah / Ubah Qty Fisik:</label>
                     
                     <div class="modern-stepper-row">
                         <button onclick="ubahNilaiBebas(-1)" class="modern-step-btn">-</button>
@@ -425,7 +425,7 @@ function bukaPopupBebas(index) {
     document.getElementById('modalPluBebas').innerText = item.plu || "-";
     document.getElementById('modalBarcodeBebas').innerText = item.barcode;
     document.getElementById('modalCurrentQtyBebas').innerText = item.qty;
-    document.getElementById('modalInputTambahBebas').value = item.qty;
+    document.getElementById('modalInputTambahBebas').value = "0";
 
     document.getElementById('popupQtyModalBebas').classList.remove('hidden');
     document.getElementById('modalInputTambahBebas').focus();
@@ -447,12 +447,11 @@ function ubahNilaiBebas(delta) {
 
 function simpanQtyBebas() {
     if (currentBebasIndex === null) return;
-    let inputVal = parseInt(document.getElementById('modalInputTambahBebas').value);
-    if (isNaN(inputVal)) inputVal = 0;
-    
+    let tambah = parseInt(document.getElementById('modalInputTambahBebas').value) || 0;
     let item = dataRakBebas[currentBebasIndex];
 
-    item.qty = inputVal >= 0 ? inputVal : 0;
+    item.qty += tambah; // Menambah Qty ke nilai sebelumnya
+    if (item.qty < 0) item.qty = 0;
     item.selisih = item.qty - item.oh;
 
     localStorage.setItem(STORAGE_KEY_BEBAS, JSON.stringify(dataRakBebas));
