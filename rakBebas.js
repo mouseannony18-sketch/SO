@@ -54,23 +54,24 @@ async function loadMenuRakBebas() {
             <div id="readerBebas"></div>
         </div>
 
-        <!-- TABEL UTAMA RAK BEBAS -->
-        <div class="table-full-container">
-            <table id="tabelRakBebas">
-                <thead>
-                    <tr>
-                        <th style="width: 40px;">#</th>
-                        <th>PLU / Barcode</th>
-                        <th>Nama Item</th>
-                        <th style="text-align: center; width: 110px;">QTY (Fisik)</th>
-                        <th style="text-align: center; width: 50px;">OH</th>
-                        <th style="text-align: center; width: 60px;">Selisih</th>
-                        <th style="text-align: center; width: 50px;">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody id="tbodyRakBebas"></tbody>
-            </table>
-        </div>
+                    <!-- TABEL UTAMA RAK BEBAS -->
+            <div class="table-full-container">
+                <table id="tabelRakBebas">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">#</th>
+                            <th style="width: 100px;">PLU / Barcode</th>
+                            <th>Nama Item</th>
+                            <th style="text-align: center; width: 100px;">QTY (Fisik)</th>
+                            <th style="text-align: center; width: 45px;">OH</th>
+                            <th style="text-align: center; width: 55px;">Selisih</th>
+                            <th style="text-align: center; width: 55px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyRakBebas"></tbody>
+                </table>
+            </div>
+
     `;
 
     // Sembunyikan form lain
