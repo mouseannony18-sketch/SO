@@ -12,6 +12,15 @@ let statusFilterSelisihBebas = false;
 async function loadMenuRakBebas() {
     setupWorkspaceHeader("Rak Bebas / Customize", "Memuat item bebas...", false);
 
+    // Sembunyikan menu lain agar tidak bertumpuk
+    let menu979Container = document.getElementById('menu979Container');
+    if (menu979Container) menu979Container.classList.add('hidden');
+
+    let soArea = document.getElementById('soFormArea');
+    let adminArea = document.getElementById('adminFormArea');
+    if (soArea) soArea.classList.add('hidden');
+    if (adminArea) adminArea.classList.add('hidden');
+
     let container = document.getElementById('workspaceCard');
     let menuBebasContainer = document.getElementById('menuBebasContainer');
     
@@ -52,7 +61,7 @@ async function loadMenuRakBebas() {
             <div id="readerBebas"></div>
         </div>
 
-        <!-- TABEL UTAMA PERSIS 100% SEPERTI 979 (Tanpa Kolom Aksi Terpisah) -->
+        <!-- TABEL UTAMA FULL LAYAR (Disamakan persis dengan 979 agar scrollable dan rapi) -->
         <div class="table-full-container">
             <table id="tabelRakBebas">
                 <thead>
@@ -70,20 +79,12 @@ async function loadMenuRakBebas() {
         </div>
     `;
 
-    let soArea = document.getElementById('soFormArea');
-    let adminArea = document.getElementById('adminFormArea');
-    let menu979Container = document.getElementById('menu979Container');
-    if (soArea) soArea.classList.add('hidden');
-    if (adminArea) adminArea.classList.add('hidden');
-    if (menu979Container) menu979Container.classList.add('hidden');
-
     if (!window.Html5Qrcode) {
         let scriptTag = document.createElement('script');
         scriptTag.src = "https://unpkg.com/html5-qrcode";
         document.head.appendChild(scriptTag);
     }
 
-    // Modal Pop-up Qty disamakan dengan tambahan opsi hapus item jika diperlukan
     if (!document.getElementById('popupQtyModalBebas')) {
         let modalDiv = document.createElement('div');
         modalDiv.id = 'popupQtyModalBebas';
