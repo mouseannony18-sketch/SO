@@ -1,184 +1,175 @@
-/* Gaya Dasar Tema Gelap */
 body { 
-    font-family: sans-serif; 
-    background: #121212; 
-    color: #f4f4f9;
-    padding: 10px; 
+    font-family: system-ui, -apple-system, sans-serif; 
+    background: #f7f8fa; 
+    color: #333;
+    padding: 0; 
     margin: 0; 
 }
 .card { 
-    background: #1e1e1e; 
-    color: #fff;
+    background: white; 
+    color: #333;
     padding: 20px; 
     border-radius: 12px; 
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
     max-width: 400px; 
-    margin: 20px auto; 
+    margin: 40px auto; 
 }
-h3 { 
-    margin-top: 0; 
-    color: #fff; 
-    text-align: center; 
-}
+h3 { margin-top: 0; color: #222; text-align: center; }
 input, select, button { 
     width: 100%; 
     padding: 10px; 
     margin-top: 8px; 
     margin-bottom: 12px; 
     box-sizing: border-box; 
-    border: 1px solid #444; 
+    border: 1px solid #ddd; 
     border-radius: 6px; 
-    background: #2a2a2a;
-    color: #fff;
+    background: #fff;
+    color: #333;
 }
-input::placeholder { color: #888; }
 button { 
-    background: #007bff; 
+    background: #0066cc; 
     color: white; 
     border: none; 
     font-weight: bold; 
     cursor: pointer; 
 }
-button:hover { background: #0056b3; }
+button:hover { background: #0052a3; }
 .hidden { display: none; }
 
-/* Header & Tampilan Utama Ala Aplikasi Mobile */
-.app-container {
-    max-width: 450px;
+/* Layout Utama (Header & Body Terpisah) */
+.main-layout {
+    max-width: 480px;
     margin: 0 auto;
-    padding: 10px;
+    min-height: 100vh;
+    background: #f7f8fa;
+    display: flex;
+    flex-direction: column;
 }
-.app-header {
+
+/* 1. Styling Header */
+.app-header-custom {
+    background: #ffffff;
+    padding: 16px 20px;
+    border-bottom: 1px solid #eaeaea;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+.header-top-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #1e1e1e;
-    padding: 12px 15px;
-    border-radius: 10px;
-    margin-bottom: 20px;
+    margin-bottom: 14px;
 }
-.header-title {
+.header-brand {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-weight: bold;
+    font-weight: 700;
     font-size: 16px;
+    color: #111;
 }
-.header-actions {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+.app-logo {
+    font-size: 20px;
 }
-.icon-btn {
-    background: #2a2a2a;
-    border: none;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 14px;
-    margin: 0;
-    padding: 0;
-}
-.logout-top-btn {
-    background: #dc3545;
+.logout-link-btn {
+    background: #ff4d4d;
     color: white;
     border: none;
     border-radius: 6px;
-    padding: 6px 12px;
+    padding: 6px 14px;
     font-size: 12px;
+    font-weight: 600;
     cursor: pointer;
     width: auto;
     margin: 0;
 }
+.logout-link-btn:hover { background: #e03b3b; }
 
-/* Banner Sambutan */
-.welcome-banner {
-    text-align: center;
-    margin-bottom: 25px;
+.header-welcome-box {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
-.welcome-banner h2 {
-    margin: 0 0 5px 0;
-    font-size: 20px;
-    color: #ffd700;
-}
-.welcome-banner p {
+.welcome-title {
     margin: 0;
-    font-size: 13px;
-    color: #aaa;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a1a;
 }
-.nik-info {
-    font-size: 11px;
-    color: #4CAF50 !important;
-    margin-top: 4px !important;
+.user-real-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0066cc;
+}
+.store-real-name {
+    font-size: 12px;
+    color: #666;
+    margin-top: 2px;
 }
 
-/* Grid Menu Kotak Bulat */
-.menu-grid {
+/* 2. Styling Body & Menu Kotak Bulat */
+.app-body-content {
+    padding: 24px 20px;
+    flex: 1;
+}
+.menu-grid-custom {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    padding: 10px;
+    gap: 16px;
 }
-.menu-item {
+.menu-box-item {
     display: flex;
     flex-direction: column;
     align-items: center;
     cursor: pointer;
-    transition: transform 0.2s;
 }
-.menu-item:active {
-    transform: scale(0.95);
+.menu-box-item:active {
+    transform: scale(0.96);
 }
-.menu-icon-box {
-    width: 75px;
-    height: 75px;
-    border-radius: 18px;
+.icon-circle {
+    width: 68px;
+    height: 68px;
+    border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.06);
     margin-bottom: 6px;
+    border: 1px solid rgba(0,0,0,0.04);
 }
-.bg-white { background: #ffffff; }
-.bg-red { background: #c62828; }
-.bg-blue { background: #1976d2; }
+.bg-white-card { background: #ffffff; }
+.bg-red-card { background: #d93838; }
+.bg-blue-card { background: #2563eb; }
 
-.menu-text-badge {
-    font-weight: 900;
-    font-size: 18px;
+.badge-text {
+    font-weight: 800;
+    font-size: 16px;
 }
-.menu-text-badge.red { color: #d32f2f; }
-.menu-text-badge.blue { color: #0288d1; font-size: 16px; }
-.menu-icon-symbol { font-size: 28px; }
+.badge-text.red { color: #dc2626; }
+.badge-text.blue { color: #2563eb; font-size: 14px; }
+.symbol-icon { font-size: 24px; }
 
-.menu-label {
-    font-size: 13px;
-    color: #e0e0e0;
+.menu-title-label {
+    font-size: 12px;
+    color: #4b5563;
     text-align: center;
-    font-weight: 500;
+    font-weight: 600;
 }
 
-/* Tabel dan Tombol Workspace */
+/* Tabel & Workspace Lainnya */
 table { 
     width: 100%; 
     border-collapse: collapse; 
     margin-top: 10px; 
 }
 th, td { 
-    border: 1px solid #444; 
+    border: 1px solid #ddd; 
     padding: 8px; 
     font-size: 13px; 
     text-align: left; 
-    color: #fff;
 }
-th { background: #2a2a2a; }
-
+th { background: #f1f3f5; }
 .back-btn { background: #6c757d; margin-top: 15px; }
 .excel-btn { background: #28a745; margin-top: 15px; }
 .save-admin-btn { background: #28a745; }
-.admin-notice { font-size: 13px; color: #ff6b6b; text-align: center; }
-#statusLogin { text-align: center; font-size: 13px; color: #aaa; }
+.admin-notice { font-size: 13px; color: #d9534f; text-align: center; }
+#statusLogin { text-align: center; font-size: 13px; color: #666; }
