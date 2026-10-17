@@ -1,5 +1,5 @@
 // =========================================================
-// MODUL EKSPOR EXCEL & CETAK PDF (export.js)
+// MODUL EKSPOR EXCEL & CETAK PDF BERBASIS HTML (export.js)
 // =========================================================
 
 function exportUniversalReport(judulLaporan, dataArray) {
@@ -24,40 +24,38 @@ function downloadExcelCustomGlobal(judul, dataArray) {
         let totalOh = dataArray.reduce((sum, item) => sum + (parseInt(item.oh || item.OH || 0)), 0);
         let totalSelisih = dataArray.reduce((sum, item) => sum + (parseInt(item.selisih || item.Selisih || 0)), 0);
 
-        let xmlContent = '<?xml version="1.0" encoding="UTF-8"?>\n' +
-'<?mso-application progid="Excel.Sheet"?>\n' +
-'<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" ' +
-'xmlns:o="urn:schemas-microsoft-com:office:office" ' +
-'xmlns:x="urn:schemas-microsoft-com:office:excel" ' +
-'xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" ' +
-'xmlns:html="http://www.w3.org/TR/REC-html40">\n' +
-'<Styles>\n' +
-'<Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Center"/><Font ss:FontName="Arial" ss:Size="10"/></Style>\n' +
-'<Style ss:ID="TitleStyle"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Font ss:FontName="Arial" ss:Size="12" ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#059669" ss:Pattern="Solid"/></Style>\n' +
-'<Style ss:ID="SubtitleStyle"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Font ss:FontName="Arial" ss:Size="10" ss:Italic="1" ss:Color="#065f46"/><Interior ss:Color="#D1FAE5" ss:Pattern="Solid"/></Style>\n' +
-'<Style ss:ID="HeaderStyle"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Font ss:FontName="Arial" ss:Size="10" ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#059669" ss:Pattern="Solid"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/></Borders></Style>\n' +
-'<Style ss:ID="CellCenter"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Font ss:FontName="Arial" ss:Size="10"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/></Borders></Style>\n' +
-'<Style ss:ID="CellRight"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:FontName="Arial" ss:Size="10"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/></Borders></Style>\n' +
-'<Style ss:ID="CellLeft"><Alignment ss:Horizontal="Left" ss:Vertical="Center"/><Font ss:FontName="Arial" ss:Size="10"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/></Borders></Style>\n' +
-'<Style ss:ID="CellRed"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Font ss:FontName="Arial" ss:Size="10" ss:Bold="1" ss:Color="#DC2626"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/></Borders></Style>\n' +
-'<Style ss:ID="TotalStyle"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Font ss:FontName="Arial" ss:Size="10" ss:Bold="1"/><Interior ss:Color="#FDE047" ss:Pattern="Solid"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#000000"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#000000"/></Borders></Style>\n' +
-'<Style ss:ID="TotalLabelStyle"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:FontName="Arial" ss:Size="10" ss:Bold="1"/><Interior ss:Color="#FDE047" ss:Pattern="Solid"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#000000"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#000000"/></Borders></Style>\n' +
-'</Styles>\n' +
-'<Worksheet ss:Name="Rak_979">\n' +
-'<Table>\n' +
-'<Column ss:Width="45"/><Column ss:Width="90"/><Column ss:Width="130"/><Column ss:Width="300"/><Column ss:Width="80"/><Column ss:Width="70"/><Column ss:Width="70"/>\n' +
-'<Row ss:Height="30"><Cell ss:MergeAcross="6" ss:StyleID="TitleStyle"><Data ss:Type="String">' + escapeXml(judul) + '</Data></Cell></Row>\n' +
-'<Row ss:Height="22"><Cell ss:MergeAcross="6" ss:StyleID="SubtitleStyle"><Data ss:Type="String">' + todayStr + '</Data></Cell></Row>\n' +
-'<Row ss:Height="10"/>\n' +
-'<Row ss:Height="25">\n' +
-'<Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">No.</Data></Cell>\n' +
-'<Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">PLU</Data></Cell>\n' +
-'<Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">Barcode</Data></Cell>\n' +
-'<Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">Nama Item</Data></Cell>\n' +
-'<Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">QTY Fisik</Data></Cell>\n' +
-'<Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">OH</Data></Cell>\n' +
-'<Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">Selisih</Data></Cell>\n' +
-'</Row>\n';
+        let htmlTable = `
+            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body { font-family: Arial, sans-serif; }
+                    .title { background-color: #059669; color: #FFFFFF; font-size: 14px; font-weight: bold; text-align: center; vertical-align: middle; height: 35px; }
+                    .subtitle { background-color: #D1FAE5; color: #065F46; font-size: 11px; font-style: italic; text-align: center; vertical-align: middle; height: 25px; }
+                    .th-header { background-color: #059669; color: #FFFFFF; font-size: 11px; font-weight: bold; text-align: center; vertical-align: middle; border: 1px solid #000000; height: 28px; }
+                    .td-center { text-align: center; vertical-align: middle; border: 1px solid #D1D5DB; font-size: 10px; height: 22px; }
+                    .td-right { text-align: right; vertical-align: middle; border: 1px solid #D1D5DB; font-size: 10px; height: 22px; mso-number-format:"\@"; }
+                    .td-left { text-align: left; vertical-align: middle; border: 1px solid #D1D5DB; font-size: 10px; height: 22px; }
+                    .td-red { text-align: center; vertical-align: middle; border: 1px solid #D1D5DB; font-size: 10px; font-weight: bold; color: #DC2626; height: 22px; }
+                    .total-label { background-color: #FDE047; font-weight: bold; font-size: 11px; text-align: right; vertical-align: middle; border-top: 2px solid #000000; border-bottom: 2px solid #000000; border-left: 1px solid #000000; height: 28px; }
+                    .total-val { background-color: #FDE047; font-weight: bold; font-size: 11px; text-align: center; vertical-align: middle; border-top: 2px solid #000000; border-bottom: 2px solid #000000; border-right: 1px solid #000000; border-left: 1px solid #000000; height: 28px; }
+                </style>
+            </head>
+            <body>
+                <table>
+                    <tr><td colspan="7" class="title">${escapeHtml(judul)}</td></tr>
+                    <tr><td colspan="7" class="subtitle">${todayStr}</td></tr>
+                    <tr><td colspan="7"></td></tr>
+                    <tr>
+                        <td class="th-header" style="width: 45px;">No.</td>
+                        <td class="th-header" style="width: 90px;">PLU</td>
+                        <td class="th-header" style="width: 130px;">Barcode</td>
+                        <td class="th-header" style="width: 300px;">Nama Item</td>
+                        <td class="th-header" style="width: 80px;">QTY Fisik</td>
+                        <td class="th-header" style="width: 70px;">OH</td>
+                        <td class="th-header" style="width: 70px;">Selisih</td>
+                    </tr>
+        `;
 
         dataArray.forEach((item, index) => {
             let no = item.no || (index + 1);
@@ -67,28 +65,34 @@ function downloadExcelCustomGlobal(judul, dataArray) {
             let qty = parseInt(item.qty ?? item.QTY ?? 0);
             let oh = parseInt(item.oh ?? item.OH ?? 0);
             let selisih = parseInt(item.selisih ?? item.Selisih ?? 0);
-            let selisihStyleTag = selisih !== 0 ? 'CellRed' : 'CellCenter';
+            let selisihClass = selisih !== 0 ? 'td-red' : 'td-center';
 
-            xmlContent += '<Row ss:Height="20">\n' +
-                '<Cell ss:StyleID="CellCenter"><Data ss:Type="Number">' + no + '</Data></Cell>\n' +
-                '<Cell ss:StyleID="CellRight"><Data ss:Type="String">' + escapeXml(String(plu)) + '</Data></Cell>\n' +
-                '<Cell ss:StyleID="CellRight"><Data ss:Type="String">' + escapeXml(String(barcode)) + '</Data></Cell>\n' +
-                '<Cell ss:StyleID="CellLeft"><Data ss:Type="String">' + escapeXml(String(nama)) + '</Data></Cell>\n' +
-                '<Cell ss:StyleID="CellCenter"><Data ss:Type="Number">' + qty + '</Data></Cell>\n' +
-                '<Cell ss:StyleID="CellCenter"><Data ss:Type="Number">' + oh + '</Data></Cell>\n' +
-                '<Cell ss:StyleID="' + selisihStyleTag + '"><Data ss:Type="Number">' + selisih + '</Data></Cell>\n' +
-                '</Row>\n';
+            htmlTable += `
+                <tr>
+                    <td class="td-center">${no}</td>
+                    <td class="td-right">${escapeHtml(String(plu))}</td>
+                    <td class="td-right">${escapeHtml(String(barcode))}</td>
+                    <td class="td-left">${escapeHtml(String(nama))}</td>
+                    <td class="td-center">${qty}</td>
+                    <td class="td-center">${oh}</td>
+                    <td class="${selisihClass}">${selisih}</td>
+                </tr>
+            `;
         });
 
-        xmlContent += '<Row ss:Height="24">\n' +
-            '<Cell ss:MergeAcross="3" ss:StyleID="TotalLabelStyle"><Data ss:Type="String">TOTAL KESELURUHAN: </Data></Cell>\n' +
-            '<Cell ss:StyleID="TotalStyle"><Data ss:Type="Number">' + totalQty + '</Data></Cell>\n' +
-            '<Cell ss:StyleID="TotalStyle"><Data ss:Type="Number">' + totalOh + '</Data></Cell>\n' +
-            '<Cell ss:StyleID="TotalStyle"><Data ss:Type="Number">' + totalSelisih + '</Data></Cell>\n' +
-            '</Row>\n' +
-            '</Table></Worksheet></Workbook>';
+        htmlTable += `
+                    <tr>
+                        <td colspan="4" class="total-label">TOTAL KESELURUHAN:</td>
+                        <td class="total-val">${totalQty}</td>
+                        <td class="total-val">${totalOh}</td>
+                        <td class="total-val">${totalSelisih}</td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+        `;
 
-        let blob = new Blob([xmlContent], { type: 'application/vnd.ms-excel;charset=utf-8' });
+        let blob = new Blob([htmlTable], { type: 'application/vnd.ms-excel;charset=utf-8' });
         let url = URL.createObjectURL(blob);
         let a = document.createElement('a');
         a.href = url;
@@ -193,7 +197,7 @@ function cetakPDFGlobal(judul, dataArray) {
     win.document.close();
 }
 
-function escapeXml(unsafe) {
+function escapeHtml(unsafe) {
     if (!unsafe) return "";
     return String(unsafe).replace(/[<>&'"]/g, function (c) {
         switch (c) {
