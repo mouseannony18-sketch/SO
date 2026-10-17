@@ -9,7 +9,8 @@ window.onload = function() {
     if (savedTheme === 'light') {
         document.body.classList.remove('dark-mode');
         document.body.classList.add('light-mode');
-        document.querySelector('.theme-toggle-btn').innerText = '☀️';
+        let themeBtn = document.querySelector('.theme-toggle-btn');
+        if (themeBtn) themeBtn.innerText = '☀️';
     }
 
     let savedToken = localStorage.getItem('apo_token');
@@ -91,21 +92,23 @@ function toggleFullScreen() {
 }
 
 function toggleTheme() {
+    let themeBtn = document.querySelector('.theme-toggle-btn');
     if (document.body.classList.contains('dark-mode')) {
         document.body.classList.remove('dark-mode');
         document.body.classList.add('light-mode');
-        document.querySelector('.theme-toggle-btn').innerText = '☀️';
+        if (themeBtn) themeBtn.innerText = '☀️';
         localStorage.setItem('apo_theme', 'light');
     } else {
         document.body.classList.remove('light-mode');
         document.body.classList.add('dark-mode');
-        document.querySelector('.theme-toggle-btn').innerText = '🌙';
+        if (themeBtn) themeBtn.innerText = '🌙';
         localStorage.setItem('apo_theme', 'dark');
     }
 }
 
 function updateAuthButtonState(isValid) {
     let authBtn = document.getElementById('authBtn');
+    if (!authBtn) return;
     if (isValid) {
         authBtn.innerText = "Keluar";
         authBtn.className = "auth-action-btn logout-color";
@@ -244,7 +247,8 @@ function pilihMenu(jenis) {
             return;
         }
     }
-    document.getElementById('judulMenuAktif').innerText = judul;
+    let titleEl = document.getElementById('judulMenuAktif');
+    if (titleEl) titleEl.innerText = judul;
 }
 
 function tutupModalLogin() {
@@ -258,13 +262,17 @@ function tutupModalDanLanjutkan() {
 }
 
 function bukaAreaSO() {
-    document.getElementById('soFormArea').classList.remove('hidden');
-    document.getElementById('adminFormArea').classList.add('hidden');
+    let soArea = document.getElementById('soFormArea');
+    let adminArea = document.getElementById('adminFormArea');
+    if (soArea) soArea.classList.remove('hidden');
+    if (adminArea) adminArea.classList.add('hidden');
 }
 
 function bukaAreaAdmin() {
-    document.getElementById('soFormArea').classList.add('hidden');
-    document.getElementById('adminFormArea').classList.remove('hidden');
+    let soArea = document.getElementById('soFormArea');
+    let adminArea = document.getElementById('adminFormArea');
+    if (soArea) soArea.classList.add('hidden');
+    if (adminArea) adminArea.classList.remove('hidden');
 }
 
 function kembaliKeMenu() {
@@ -320,12 +328,13 @@ function exportUniversalReport(judulLaporan, dataArray) {
 }
 
 function downloadExcelCustomGlobal(judul, dataArray) {
-    let todayStr = "Tanggal: " + new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    let totalQty = dataArray.reduce((sum, item) => sum + (parseInt(item.qty || item.QTY || 0)), 0);
-    let totalOh = dataArray.reduce((sum, item) => sum + (parseInt(item.oh || item.OH || 0)), 0);
-    let totalSelisih = dataArray.reduce((sum, item) => sum + (parseInt(item.selisih || item.Selisih || 0)), 0);
+    try {
+        let todayStr = "Tanggal: " + new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        let totalQty = dataArray.reduce((sum, item) => sum + (parseInt(item.qty || item.QTY || 0)), 0);
+        let totalOh = dataArray.reduce((sum, item) => sum + (parseInt(item.oh || item.OH || 0)), 0);
+        let totalSelisih = dataArray.reduce((sum, item) => sum + (parseInt(item.selisih || item.Selisih || 0)), 0);
 
-    let xmlContent = '<?xml version="1.0" encoding="UTF-8"?>' +
+        let xmlContent = '<?xml version="1.0" encoding="UTF-8"?>' +
 '<?mso-application progid="Excel.Sheet"?>' +
 '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" ' +
 'xmlns:o="urn:schemas-microsoft-com:office:office" ' +
@@ -360,52 +369,68 @@ function downloadExcelCustomGlobal(judul, dataArray) {
 '<Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">Selisih</Data></Cell>' +
 '</Row>';
 
-    dataArray.forEach((item, index) => {
-        let no = item.no || (index + 1);
-        let plu = item.plu || item.PLU || "-";
-        let barcode = item.barcode || item.Barcode || "-";
-        let nama = item.namaItem || item.Nama_Item || item.nama || "-";
-        let qty = item.qty ?? item.QTY ?? 0;
-        let oh = item.oh ?? item.OH ?? 0;
-        let selisih = item.selisih ?? item.Selisih ?? 0;
-        let selisihStyleTag = selisih !== 0 ? 'CellRed' : 'CellCenter';
+        dataArray.forEach((item, index) => {
+            let no = item.no || (index + 1);
+            let plu = item.plu || item.PLU || "-";
+            let barcode = item.barcode || item.Barcode || "-";
+            let nama = item.namaItem || item.Nama_Item || item.nama || "-";
+            let qty = item.qty ?? item.QTY ?? 0;
+            let oh = item.oh ?? item.OH ?? 0;
+            let selisih = item.selisih ?? item.Selisih ?? 0;
+            let selisihStyleTag = selisih !== 0 ? 'CellRed' : 'CellCenter';
 
-        xmlContent += '<Row ss:Height="20">' +
-            '<Cell ss:StyleID="CellCenter"><Data ss:Type="Number">' + no + '</Data></Cell>' +
-            '<Cell ss:StyleID="CellRight"><Data ss:Type="String">' + escapeXml(String(plu)) + '</Data></Cell>' +
-            '<Cell ss:StyleID="CellRight"><Data ss:Type="String">' + escapeXml(String(barcode)) + '</Data></Cell>' +
-            '<Cell ss:StyleID="CellLeft"><Data ss:Type="String">' + escapeXml(String(nama)) + '</Data></Cell>' +
-            '<Cell ss:StyleID="CellCenter"><Data ss:Type="Number">' + qty + '</Data></Cell>' +
-            '<Cell ss:StyleID="CellCenter"><Data ss:Type="Number">' + oh + '</Data></Cell>' +
-            '<Cell ss:StyleID="' + selisihStyleTag + '"><Data ss:Type="Number">' + selisih + '</Data></Cell>' +
-            '</Row>';
-    });
+            xmlContent += '<Row ss:Height="20">' +
+                '<Cell ss:StyleID="CellCenter"><Data ss:Type="Number">' + no + '</Data></Cell>' +
+                '<Cell ss:StyleID="CellRight"><Data ss:Type="String">' + escapeXml(String(plu)) + '</Data></Cell>' +
+                '<Cell ss:StyleID="CellRight"><Data ss:Type="String">' + escapeXml(String(barcode)) + '</Data></Cell>' +
+                '<Cell ss:StyleID="CellLeft"><Data ss:Type="String">' + escapeXml(String(nama)) + '</Data></Cell>' +
+                '<Cell ss:StyleID="CellCenter"><Data ss:Type="Number">' + qty + '</Data></Cell>' +
+                '<Cell ss:StyleID="CellCenter"><Data ss:Type="Number">' + oh + '</Data></Cell>' +
+                '<Cell ss:StyleID="' + selisihStyleTag + '"><Data ss:Type="Number">' + selisih + '</Data></Cell>' +
+                '</Row>';
+        });
 
-    xmlContent += '<Row ss:Height="24">' +
-        '<Cell ss:MergeAcross="3" ss:StyleID="TotalLabelStyle"><Data ss:Type="String">TOTAL KESELURUHAN: </Data></Cell>' +
-        '<Cell ss:StyleID="TotalStyle"><Data ss:Type="Number">' + totalQty + '</Data></Cell>' +
-        '<Cell ss:StyleID="TotalStyle"><Data ss:Type="Number">' + totalOh + '</Data></Cell>' +
-        '<Cell ss:StyleID="TotalStyle"><Data ss:Type="Number">' + totalSelisih + '</Data></Cell>' +
-        '</Row>' +
-        '</Table></Worksheet></Workbook>';
+        xmlContent += '<Row ss:Height="24">' +
+            '<Cell ss:MergeAcross="3" ss:StyleID="TotalLabelStyle"><Data ss:Type="String">TOTAL KESELURUHAN: </Data></Cell>' +
+            '<Cell ss:StyleID="TotalStyle"><Data ss:Type="Number">' + totalQty + '</Data></Cell>' +
+            '<Cell ss:StyleID="TotalStyle"><Data ss:Type="Number">' + totalOh + '</Data></Cell>' +
+            '<Cell ss:StyleID="TotalStyle"><Data ss:Type="Number">' + totalSelisih + '</Data></Cell>' +
+            '</Row>' +
+            '</Table></Worksheet></Workbook>';
 
-    // Menggunakan Base64 Data URI agar kompatibel penuh di browser mobile & WebView Android
-    let base64 = function(s) {
-        return window.btoa(unescape(encodeURIComponent(s)));
-    };
+        let bytes = new TextEncoder().encode(xmlContent);
+        let binString = Array.from(bytes, (byte) => String.fromCodePoint(byte)).join("");
+        let base64Content = btoa(binString);
 
-    let uri = 'data:application/vnd.ms-excel;base64,';
-    let excelFile = uri + base64(xmlContent);
+        let uri = 'data:application/vnd.ms-excel;base64,';
+        let excelFile = uri + base64Content;
 
-    let downloadLink = document.createElement("a");
-    downloadLink.href = excelFile;
-    downloadLink.download = judul.replace(/[^a-zA-Z0-9]/g, "_") + ".xls";
-    
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
+        let downloadLink = document.createElement("a");
+        downloadLink.href = excelFile;
+        downloadLink.download = (judul ? judul.replace(/[^a-zA-Z0-9]/g, "_") : "Laporan_SO") + ".xls";
+        
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+
+    } catch (err) {
+        console.error("Gagal export Excel:", err);
+        alert("Terjadi kesalahan saat mengunduh Excel: " + err.message);
+    }
 }
 
+function escapeXml(unsafe) {
+    if (!unsafe) return "";
+    return String(unsafe).replace(/[<>&'"]/g, function (c) {
+        switch (c) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case '\'': return '&apos;';
+            case '"': return '&quot;';
+        }
+    });
+}
 
 function cetakPDFGlobal(judul, dataArray) {
     let todayStr = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
