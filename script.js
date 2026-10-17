@@ -257,13 +257,24 @@ function pilihMenu(jenis) {
     if (mainMenuCard) mainMenuCard.classList.add('hidden');
     if (workspaceCard) workspaceCard.classList.remove('hidden');
 
+    // Sembunyikan semua container sub-menu agar tidak tumpang tindih
+    let menu979Container = document.getElementById('menu979Container');
+    let menuBebasContainer = document.getElementById('menuBebasContainer');
+    let soArea = document.getElementById('soFormArea');
+    let adminArea = document.getElementById('adminFormArea');
+
+    if (menu979Container) menu979Container.classList.add('hidden');
+    if (menuBebasContainer) menuBebasContainer.classList.add('hidden');
+    if (soArea) soArea.classList.add('hidden');
+    if (adminArea) adminArea.classList.add('hidden');
+
     if (jenis === '979') {
         if (typeof loadMenu979 === 'function') {
             loadMenu979();
         }
     } else if (jenis === 'partial') {
         setupWorkspaceHeader("SO Reguler / Partial", "Mode input reguler");
-        bukaAreaSO();
+        if (soArea) soArea.classList.remove('hidden');
     } else if (jenis === 'bebas') {
         if (typeof loadMenuRakBebas === 'function') {
             loadMenuRakBebas();
@@ -272,7 +283,7 @@ function pilihMenu(jenis) {
         let passwordAdmin = prompt("Masukkan PIN/Sandi khusus Admin:");
         if (passwordAdmin === "admin123") {
             setupWorkspaceHeader("Tambah Item Inventory (Admin)", "Manajemen data master");
-            bukaAreaAdmin();
+            if (adminArea) adminArea.classList.remove('hidden');
         } else {
             alert("Akses ditolak! Sandi admin salah.");
             kembaliKeMenu();
@@ -328,30 +339,6 @@ function tutupModalDanLanjutkan() {
     let sessionModal = document.getElementById('sessionModal');
     if (sessionModal) sessionModal.classList.add('hidden');
     lewatiLogin();
-}
-
-function bukaAreaSO() {
-    let soArea = document.getElementById('soFormArea');
-    let adminArea = document.getElementById('adminFormArea');
-    let menu979Container = document.getElementById('menu979Container');
-    let menuBebasContainer = document.getElementById('menuBebasContainer');
-    
-    if (soArea) soArea.classList.remove('hidden');
-    if (adminArea) adminArea.classList.add('hidden');
-    if (menu979Container) menu979Container.classList.add('hidden');
-    if (menuBebasContainer) menuBebasContainer.classList.add('hidden');
-}
-
-function bukaAreaAdmin() {
-    let soArea = document.getElementById('soFormArea');
-    let adminArea = document.getElementById('adminFormArea');
-    let menu979Container = document.getElementById('menu979Container');
-    let menuBebasContainer = document.getElementById('menuBebasContainer');
-    
-    if (soArea) soArea.classList.add('hidden');
-    if (adminArea) adminArea.classList.remove('hidden');
-    if (menu979Container) menu979Container.classList.add('hidden');
-    if (menuBebasContainer) menuBebasContainer.classList.add('hidden');
 }
 
 function kembaliKeMenu() {
