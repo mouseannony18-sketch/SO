@@ -319,44 +319,164 @@ function exportUniversalReport(judulLaporan, dataArray) {
     }
 }
 
-function downloadExcelCustomGlobal(judul, dataArray) {
+async function downloadExcelCustomGlobal(judul, dataArray) {
+    // Pastikan pustaka xlsx-js-style termuat untuk mendukung warna, border, dan alignment
+    if (!window.XLSX || !window.XLSX.write_file) {
+        if (!document.getElementById('xlsxStyleScript')) {
+            let script = document.createElement('script');
+            script.id = 'xlsxStyleScript';
+            script.src = "https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.full.min.js";
+            document.head.appendChild(script);
+            await new Promise(resolve => script.onload = resolve);
+        }
+    }
+
     let todayStr = "Tanggal: " + new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
     let totalQty = dataArray.reduce((sum, item) => sum + (parseInt(item.qty || item.QTY || 0)), 0);
     let totalOh = dataArray.reduce((sum, item) => sum + (parseInt(item.oh || item.OH || 0)), 0);
     let totalSelisih = dataArray.reduce((sum, item) => sum + (parseInt(item.selisih || item.Selisih || 0)), 0);
 
-    let sheetData = [
-        [judul],
-        [todayStr],
-        [],
-        ["No.", "PLU", "Barcode", "Nama Item", "QTY Fisik", "OH (On Hand)", "Selisih"]
+    let wb = XLSX.utils.book_new();
+    let ws = {};
+
+    // 1. Desain Judul & Tanggal (Baris 1 & 2)
+    ws['A1'] = { v: judul, s: { font: { bold: true, sz: 13, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "059669" } }, alignment: { horizontal: "center", vertical: "center" } } };
+    ws['A2'] = { v: todayStr, s: { font: { italic: true, sz: 10, color: { rgb: "333333" } }, fill: { fgColor: { rgb: "D1FAE5" } }, alignment: { horizontal: "left", vertical: "center" } } };
+
+    // Merge baris judul dari kolom A sampai G
+    ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }
     ];
 
-    dataArray.forEach((item, index) => {
-        sheetData.push([
-            item.no || (index + 1),
-            item.plu || item.PLU || "-",
-            item.barcode || item.Barcode || "-",
-            item.namaItem || item.Nama_Item || item.nama || "-",
-            item.qty ?? item.QTY ?? 0,
-            item.oh ?? item.OH ?? 0,
-            item.selisih ?? item.Selisih ?? 0
-        ]);
+    // 2. Header Kolom (Baris 4)
+    let headers = ["No.", "PLU", "Barcode", "Nama Item", "QTY Fisik", "OH (On Hand)", "Selisih"];
+    headers.forEach((h, colIdx) => {
+        let cellRef = XLSX.utils.encode_cell({ r: 3, c: colIdx });
+        ws[cellRef] = {
+            v: h,
+            s: {
+                font: { bold: true, color: { rgb: "FFFFFF" }, sz: 11 },
+                fill: { fgColor: { rgb: "059669" } }, // Hijau Alfamart/Operational
+                alignment: { horizontal: "center", vertical: "center" },
+                border: {
+                    top: { style: "thin", color: { rgb: "000000" } },
+                    bottom: { style: "thin", color: { rgb: "000000" } },
+                    left: { style: "thin", color: { rgb: "000000" } },
+                    right: { style: "thin", color: { rgb: "000000" } }
+                }
+            }
+        };
     });
 
-    sheetData.push([]);
-    sheetData.push(["TOTAL KESELURUHAN", "", "", "", totalQty, totalOh, totalSelisih]);
+    // 3. Masukkan Data Item (Baris 5 dan seterusnya)
+    let currentRow = 4; // Indeks baris mulai dari 4 (baris ke-5 di Excel)
+    dataArray.forEach((item, index) => {
+        let no = item.no || (index + 1);
+        let plu = item.plu || item.PLU || "-";
+        let barcode = item.barcode || item.Barcode || "-";
+        let nama = item.namaItem || item.Nama_Item || item.nama || "-";
+        let qty = item.qty ?? item.QTY ?? 0;
+        let oh = item.oh ?? item.OH ?? 0;
+        let selisih = item.selisih ?? item.Selisih ?? 0;
 
-    let ws = XLSX.utils.aoa_to_sheet(sheetData);
-    ws['!cols'] = [
-        { wch: 5 }, { wch: 10 }, { wch: 15 }, { wch: 35 }, { wch: 12 }, { wch: 12 }, { wch: 10 }
+        let rowData = [
+            { v: no, align: "center" },
+            { v: plu, align: "right" },
+            { v: barcode, align: "right" },
+            { v: nama, align: "left" },
+            { v: qty, align: "center" },
+            { v: oh, align: "center" },
+            { v: selisih, align: "center", bold: true, color: selisih !== 0 ? "DC2626" : "000000" }
+        ];
+
+        rowData.forEach((cellInfo, colIdx) => {
+            let cellRef = XLSX.utils.encode_cell({ r: currentRow, c: colIdx });
+            ws[cellRef] = {
+                v: cellInfo.v,
+                s: {
+                    font: { bold: cellInfo.bold || false, color: { rgb: cellInfo.color || "000000" }, sz: 10 },
+                    alignment: { horizontal: cellInfo.align, vertical: "center" },
+                    border: {
+                        top: { style: "thin", color: { rgb: "D1D5DB" } },
+                        bottom: { style: "thin", color: { rgb: "D1D5DB" } },
+                        left: { style: "thin", color: { rgb: "D1D5DB" } },
+                        right: { style: "thin", color: { rgb: "D1D5DB" } }
+                    }
+                }
+            };
+        });
+        currentRow++;
+    });
+
+    // 4. Baris Total Keseluruhan di Bagian Bawah
+    let totalRowIdx = currentRow;
+    let totalCells = [
+        { v: "TOTAL KESELURUHAN", span: 4, align: "right" },
+        { v: totalQty, align: "center" },
+        { v: totalOh, align: "center" },
+        { v: totalSelisih, align: "center" }
     ];
 
-    let wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Laporan_SO");
+    // Gabungkan kolom A sampai D untuk teks "TOTAL KESELURUHAN"
+    ws['!merges'].push({ s: { r: totalRowIdx, c: 0 }, e: { r: totalRowIdx, c: 3 } });
+
+    let colTracker = 0;
+    totalCells.forEach((tc, idx) => {
+        let cellRef = XLSX.utils.encode_cell({ r: totalRowIdx, c: colTracker });
+        ws[cellRef] = {
+            v: tc.v,
+            s: {
+                font: { bold: true, color: { rgb: "000000" }, sz: 11 },
+                fill: { fgColor: { rgb: "FDE047" } }, // Kuning keemasan total
+                alignment: { horizontal: tc.align, vertical: "center" },
+                border: {
+                    top: { style: "medium", color: { rgb: "000000" } },
+                    bottom: { style: "medium", color: { rgb: "000000" } },
+                    left: { style: "thin", color: { rgb: "000000" } },
+                    right: { style: "thin", color: { rgb: "000000" } }
+                }
+            }
+        };
+        colTracker += (tc.span || 1);
+    });
+
+    // Isi sel kosong yang terkena merge total agar border kuningnya rapi
+    for (let c = 1; c <= 3; c++) {
+        let emptyRef = XLSX.utils.encode_cell({ r: totalRowIdx, c: c });
+        ws[emptyRef] = {
+            v: "",
+            s: {
+                border: {
+                    top: { style: "medium", color: { rgb: "000000" } },
+                    bottom: { style: "medium", color: { rgb: "000000" } },
+                    left: { style: "thin", color: { rgb: "000000" } },
+                    right: { style: "thin", color: { rgb: "000000" } }
+                },
+                fill: { fgColor: { rgb: "FDE047" } }
+            }
+        };
+    }
+
+    // Set rentang tabel worksheet
+    ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: totalRowIdx, c: 6 } });
+
+    // Atur Lebar Kolom Agar Proporsional dan Tidak Terpotong
+    ws['!cols'] = [
+        { wch: 6 },   // No
+        { wch: 12 },  // PLU
+        { wch: 16 },  // Barcode
+        { wch: 38 },  // Nama Item
+        { wch: 12 },  // QTY Fisik
+        { wch: 12 },  // OH
+        { wch: 10 }   // Selisih
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, "Rak_979");
     XLSX.writeFile(wb, judul.replace(/[^a-zA-Z0-9]/g, "_") + ".xlsx");
 }
+
 
 function cetakPDFGlobal(judul, dataArray) {
     let todayStr = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
