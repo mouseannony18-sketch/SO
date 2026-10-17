@@ -325,7 +325,6 @@ function downloadExcelCustomGlobal(judul, dataArray) {
     let totalOh = dataArray.reduce((sum, item) => sum + (parseInt(item.oh || item.OH || 0)), 0);
     let totalSelisih = dataArray.reduce((sum, item) => sum + (parseInt(item.selisih || item.Selisih || 0)), 0);
 
-    // Pastikan string XML dimulai tepat tanpa ada spasi/enter di baris paling atas
     let xmlContent = '<?xml version="1.0" encoding="UTF-8"?>' +
 '<?mso-application progid="Excel.Sheet"?>' +
 '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" ' +
@@ -390,29 +389,21 @@ function downloadExcelCustomGlobal(judul, dataArray) {
         '</Row>' +
         '</Table></Worksheet></Workbook>';
 
-    // Gunakan explicit application/vnd.ms-excel dengan charset utf-8 pada blob
-    let blob = new Blob([xmlContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-    let url = URL.createObjectURL(blob);
-    let a = document.createElement('a');
-    a.href = url;
-    a.download = judul.replace(/[^a-zA-Z0-9]/g, "_") + ".xls";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
+    // Menggunakan Base64 Data URI agar kompatibel penuh di browser mobile & WebView Android
+    let base64 = function(s) {
+        return window.btoa(unescape(encodeURIComponent(s)));
+    };
 
-function escapeXml(unsafe) {
-    if (!unsafe) return "";
-    return String(unsafe).replace(/[<>&'"]/g, function (c) {
-        switch (c) {
-            case '<': return '&lt;';
-            case '>': return '&gt;';
-            case '&': return '&amp;';
-            case '\'': return '&apos;';
-            case '"': return '&quot;';
-        }
-    });
+    let uri = 'data:application/vnd.ms-excel;base64,';
+    let excelFile = uri + base64(xmlContent);
+
+    let downloadLink = document.createElement("a");
+    downloadLink.href = excelFile;
+    downloadLink.download = judul.replace(/[^a-zA-Z0-9]/g, "_") + ".xls";
+    
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
 }
 
 
