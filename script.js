@@ -5,7 +5,6 @@ let currentNik = "";
 let isSessionValid = true;
 
 window.onload = function() {
-    // Muat preferensi tema terakhir
     let savedTheme = localStorage.getItem('apo_theme') || 'dark';
     if (savedTheme === 'light') {
         document.body.classList.remove('dark-mode');
@@ -18,27 +17,28 @@ window.onload = function() {
     let savedName = localStorage.getItem('apo_name');
     let savedStore = localStorage.getItem('apo_store');
 
-    if (savedToken && savedNik) {
-        tokenGlobal = savedToken;
-        currentNik = savedNik;
-        isSessionValid = true;
-        
-        document.getElementById('userNameText').innerText = savedName || "Karyawan Alfamart";
-        document.getElementById('storeNameText').innerText = savedStore || "Toko Bertugas";
+    // Cek apakah user memilih mode "Skip / Tanpa Login" sebelumnya
+    let isSkipped = localStorage.getItem('apo_skipped') === 'true';
 
-        // Ubah tombol jadi Logout karena sesi aktif
-        updateAuthButtonState(true);
+    if ((savedToken && savedNik) || isSkipped) {
+        tokenGlobal = savedToken || "";
+        currentNik = savedNik || "Tamu";
+        isSessionValid = savedToken ? true : false;
+        
+        document.getElementById('userNameText').innerText = savedName || (isSkipped ? "Mode Tamu (Tanpa Login)" : "Karyawan Alfamart");
+        document.getElementById('storeNameText').innerText = savedStore || "Toko Tidak Disinkronisasi";
+
+        updateAuthButtonState(isSessionValid);
 
         document.getElementById('loginCard').classList.add('hidden');
         document.getElementById('mainMenuCard').classList.remove('hidden');
     } else {
-        // Jika belum login atau sesi kosong
         isSessionValid = false;
         updateAuthButtonState(false);
+        showLoginScreen();
     }
 };
 
-// Fungsi Toggle Dark/Light Mode
 function toggleTheme() {
     if (document.body.classList.contains('dark-mode')) {
         document.body.classList.remove('dark-mode');
@@ -53,7 +53,6 @@ function toggleTheme() {
     }
 }
 
-// Mengatur status tombol header (Keluar vs Login)
 function updateAuthButtonState(isValid) {
     let authBtn = document.getElementById('authBtn');
     if (isValid) {
@@ -65,7 +64,6 @@ function updateAuthButtonState(isValid) {
     }
 }
 
-// Aksi ketika tombol di header diklik (Bisa Logout atau pindah ke halaman Login)
 function handleAuthAction() {
     if (isSessionValid) {
         logout();
@@ -75,9 +73,24 @@ function handleAuthAction() {
 }
 
 function showLoginScreen() {
+    document.getElementById('sessionModal').classList.add('hidden');
     document.getElementById('workspaceCard').classList.add('hidden');
     document.getElementById('mainMenuCard').classList.add('hidden');
     document.getElementById('loginCard').classList.remove('hidden');
+}
+
+// Fungsi melewati login (Mode Tamu / Null Sync)
+function lewatiLogin() {
+    localStorage.setItem('apo_skipped', 'true');
+    isSessionValid = false;
+    
+    document.getElementById('userNameText').innerText = "Mode Tamu (Tanpa Login)";
+    document.getElementById('storeNameText').innerText = "Sinkronisasi Server: 0 (Null)";
+    
+    updateAuthButtonState(false);
+
+    document.getElementById('loginCard').classList.add('hidden');
+    document.getElementById('mainMenuCard').classList.remove('hidden');
 }
 
 async function prosesLogin() {
@@ -132,6 +145,7 @@ async function prosesLogin() {
             localStorage.setItem('apo_nik', currentNik);
             localStorage.setItem('apo_name', employeeName);
             localStorage.setItem('apo_store', storeName);
+            localStorage.removeItem('apo_skipped');
 
             isSessionValid = true;
             updateAuthButtonState(true);
@@ -151,9 +165,10 @@ async function prosesLogin() {
 }
 
 function pilihMenu(jenis) {
-    // Cek validitas sesi sebelum masuk menu
     let savedToken = localStorage.getItem('apo_token');
-    if (!savedToken) {
+    let isSkipped = localStorage.getItem('apo_skipped') === 'true';
+
+    if (!savedToken && !isSkipped) {
         isSessionValid = false;
         updateAuthButtonState(false);
         document.getElementById('sessionModal').classList.remove('hidden');
@@ -188,9 +203,16 @@ function pilihMenu(jenis) {
     document.getElementById('judulMenuAktif').innerText = judul;
 }
 
+// Tombol di dalam popup untuk menuju halaman login
 function tutupModalLogin() {
     document.getElementById('sessionModal').classList.add('hidden');
     showLoginScreen();
+}
+
+// Tombol di dalam popup untuk lanjut tanpa login (Skip mode)
+function tutupModalDanLanjutkan() {
+    document.getElementById('sessionModal').classList.add('hidden');
+    lewatiLogin();
 }
 
 function bukaAreaSO() {
@@ -210,18 +232,38 @@ function kembaliKeMenu() {
 
 async function tambahData() {
     let savedToken = localStorage.getItem('apo_token');
-    if (!savedToken) {
-        isSessionValid = false;
-        updateAuthButtonState(false);
-        document.getElementById('sessionModal').classList.remove('hidden');
-        return;
-    }
+    let isSkipped = localStorage.getItem('apo_skipped') === 'true';
 
     let kode = document.getElementById('kodeBarang').value.trim();
     let qtyFisik = document.getElementById('qtyFisik').value;
 
     if(!kode || !qtyFisik) {
         alert('Isi kode barcode dan qty hitung fisik dengan benar!');
+        return;
+    }
+
+    // Jika masuk tanpa login (Skip / Null Sync)
+    if (!savedToken || isSkipped) {
+        dataSO.push({ 
+            Menu: menuAktif,
+            Barcode: kode, 
+            Deskripsi: "Item Manual (Tanpa Sinkronisasi)", 
+            Qty_Hitung: qtyFisik, 
+            Stok_Sistem: 0 
+        });
+
+        let tbody = document.querySelector('#tabelSO tbody');
+        let tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><b>${kode}</b><br><small style="color:var(--text-muted);">Tanpa Login (Null)</small></td>
+            <td style="text-align: center; font-weight: bold; color: #3b82f6;">${qtyFisik}</td>
+            <td style="text-align: center; color: var(--text-muted);">0</td>
+        `;
+        tbody.appendChild(tr);
+
+        document.getElementById('kodeBarang').value = '';
+        document.getElementById('qtyFisik').value = '';
+        document.getElementById('kodeBarang').focus();
         return;
     }
 
@@ -242,7 +284,6 @@ async function tambahData() {
 
         let result = await response.json();
 
-        // Jika server menolak karena token kedaluwarsa/tidak valid
         if (response.status === 401 || (result && result.message && result.message.toLowerCase().includes('token'))) {
             localStorage.removeItem('apo_token');
             isSessionValid = false;
@@ -317,16 +358,14 @@ function logout() {
     localStorage.removeItem('apo_nik');
     localStorage.removeItem('apo_name');
     localStorage.removeItem('apo_store');
+    localStorage.removeItem('apo_skipped');
     
     tokenGlobal = "";
     currentNik = "";
     isSessionValid = false;
     
     updateAuthButtonState(false);
-    
-    document.getElementById('workspaceCard').classList.add('hidden');
-    document.getElementById('mainMenuCard').classList.add('hidden');
-    document.getElementById('loginCard').classList.remove('hidden');
+    showLoginScreen();
     
     document.getElementById('nik').value = '';
     document.getElementById('pin').value = '';
