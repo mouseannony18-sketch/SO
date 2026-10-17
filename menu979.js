@@ -22,13 +22,12 @@ async function loadMenu979() {
             </div>
             
             <div class="so-header-actions">
-                <!-- Kotak Pengaturan Menu (Dropdown) -->
                 <div class="dropdown-container">
                     <button onclick="toggleDropdownMenu()" class="settings-box-btn header-icon-btn" title="Menu Pengaturan">⚙️</button>
                     <div id="settingsDropdownMenu" class="dropdown-content hidden">
                         <button onclick="kembaliKeMenu()">🏠 Menu Utama</button>
                         <button onclick="sinkronisasiStokServer(true)">🔄 Sync Server</button>
-                        <button onclick="exportExcel979()">📥 Download Excel</button>
+                        <button onclick="exportExcel979()">📥 Download / Cetak</button>
                         <hr style="border-color: var(--border-color); margin: 4px 0;">
                         <button onclick="logout()" style="color: #ef4444;">🚪 Logout</button>
                     </div>
@@ -52,7 +51,7 @@ async function loadMenu979() {
             <button onclick="bukaScannerKamera()" class="scan-btn">📷 Scan</button>
         </div>
 
-        <!-- AREA SCANNER KAMERA (NORMAL/UTAMA) -->
+        <!-- AREA SCANNER KAMERA -->
         <div id="scannerContainer" class="scanner-box hidden">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                 <b style="font-size: 12px; color: #38bdf8;">Arahkan Kamera ke Barcode</b>
@@ -541,20 +540,7 @@ function filterSelisihToggle() {
     }
 }
 
+// Memanggil Fungsi Universal Export yang ada di script.js
 function exportExcel979() {
-    if (dataMenu979.length === 0) return alert('Belum ada data!');
-    
-    let exportData = dataMenu979.map(item => ({
-        PLU: item.plu,
-        Barcode: item.barcode,
-        Nama_Item: item.namaItem,
-        Qty_Fisik: item.qty,
-        Stok_Sistem_OH: item.oh,
-        Selisih: item.selisih
-    }));
-
-    let ws = XLSX.utils.json_to_sheet(exportData);
-    let wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Rak_979");
-    XLSX.writeFile(wb, "StockOpname_Rak_979.xlsx");
+    exportUniversalReport("Stock Opname - Rak 979 (Rawan Hilang)", dataMenu979);
 }
