@@ -330,9 +330,27 @@ body {
     border-radius: 8px;
 }
 
-#tabelMenu979 { width: 100%; white-space: nowrap; border-collapse: collapse; }
-#tabelMenu979 th { position: sticky; top: 0; z-index: 2; background: var(--table-th); padding: 8px; font-size: 12px; }
-#tabelMenu979 td { padding: 8px; border-bottom: 1px solid var(--border-color); }
+/* Berlaku untuk Tabel Menu 979 & Tabel Rak Bebas */
+#tabelMenu979, #tabelRakBebas { 
+    width: 100%; 
+    white-space: nowrap; 
+    border-collapse: collapse; 
+}
+
+#tabelMenu979 th, #tabelRakBebas th { 
+    position: sticky; 
+    top: 0; 
+    z-index: 2; 
+    background: var(--table-th); 
+    padding: 8px; 
+    font-size: 12px; 
+    text-align: left;
+}
+
+#tabelMenu979 td, #tabelRakBebas td { 
+    padding: 8px; 
+    border-bottom: 1px solid var(--border-color); 
+}
 
 .qty-pill-box {
     background: rgba(56, 189, 248, 0.1);
