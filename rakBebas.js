@@ -10,7 +10,6 @@ let isFlashOnBebas = false;
 let statusFilterSelisihBebas = false;
 
 async function loadMenuRakBebas() {
-    // Parameter ke-3 bernilai true agar tombol Sync Server muncul di header
     setupWorkspaceHeader("Rak Bebas / Customize", "Memuat item bebas...", true);
 
     let menu979Container = document.getElementById('menu979Container');
@@ -103,9 +102,9 @@ async function loadMenuRakBebas() {
 
                 <div class="modern-input-box-area">
                     <div class="modern-current-label">
-                        Qty Tersimpan: <span id="modalCurrentQtyBebas">0</span>
+                        Qty Tersimpan Saat Ini: <span id="modalCurrentQtyBebas">0</span>
                     </div>
-                    <label class="modern-input-label">Tambah / Ubah Qty Fisik:</label>
+                    <label class="modern-input-label">Atur Qty Fisik (Timpa / Ubah):</label>
                     
                     <div class="modern-stepper-row">
                         <button onclick="ubahNilaiBebas(-1)" class="modern-step-btn">-</button>
@@ -118,7 +117,10 @@ async function loadMenuRakBebas() {
                     <button onclick="tutupPopupBebas()" class="modern-btn-batal">Batal</button>
                     <button onclick="simpanQtyBebas()" class="modern-btn-simpan">Simpan</button>
                 </div>
-                <button onclick="hapusItemDariPopup()" style="width: 100%; background: #dc2626; color: white; border: none; border-radius: 8px; padding: 8px; font-weight: bold; font-size: 12px; cursor: pointer;">🗑️ Hapus Item Ini dari Daftar</button>
+                <div style="display: flex; gap: 6px;">
+                    <button onclick="resetQtyItemBebas()" style="flex: 1; background: #eab308; color: #000; border: none; border-radius: 8px; padding: 8px; font-weight: bold; font-size: 12px; cursor: pointer;">🔄 Reset Qty ke 0</button>
+                    <button onclick="hapusItemDariPopup()" style="flex: 1; background: #dc2626; color: white; border: none; border-radius: 8px; padding: 8px; font-weight: bold; font-size: 12px; cursor: pointer;">🗑️ Hapus Item</button>
+                </div>
             </div>
         `;
         document.body.appendChild(modalDiv);
@@ -267,7 +269,6 @@ async function tambahAtauCariItemRakBebas(code) {
     bukaPopupBebas(dataRakBebas.length - 1);
 }
 
-// FUNGSI SYNC SERVER KHUSUS RAK BEBAS (Tanpa konflik dengan 979)
 async function sinkronisasiStokServerBebas(isManual = false) {
     let savedToken = localStorage.getItem('apo_token');
     let isSkipped = localStorage.getItem('apo_skipped') === 'true';
@@ -424,7 +425,7 @@ function bukaPopupBebas(index) {
     document.getElementById('modalPluBebas').innerText = item.plu || "-";
     document.getElementById('modalBarcodeBebas').innerText = item.barcode;
     document.getElementById('modalCurrentQtyBebas').innerText = item.qty;
-    document.getElementById('modalInputTambahBebas').value = "0";
+    document.getElementById('modalInputTambahBebas').value = item.qty;
 
     document.getElementById('popupQtyModalBebas').classList.remove('hidden');
     document.getElementById('modalInputTambahBebas').focus();
@@ -446,16 +447,30 @@ function ubahNilaiBebas(delta) {
 
 function simpanQtyBebas() {
     if (currentBebasIndex === null) return;
-    let tambah = parseInt(document.getElementById('modalInputTambahBebas').value) || 0;
+    let inputVal = parseInt(document.getElementById('modalInputTambahBebas').value);
+    if (isNaN(inputVal)) inputVal = 0;
+    
     let item = dataRakBebas[currentBebasIndex];
 
-    item.qty += tambah;
-    if (item.qty < 0) item.qty = 0;
+    item.qty = inputVal >= 0 ? inputVal : 0;
     item.selisih = item.qty - item.oh;
 
     localStorage.setItem(STORAGE_KEY_BEBAS, JSON.stringify(dataRakBebas));
     renderTabelRakBebas(dataRakBebas);
     tutupPopupBebas();
+}
+
+function resetQtyItemBebas() {
+    if (currentBebasIndex === null) return;
+    if (confirm("Reset Qty item ini menjadi 0?")) {
+        let item = dataRakBebas[currentBebasIndex];
+        item.qty = 0;
+        item.selisih = item.qty - item.oh;
+
+        localStorage.setItem(STORAGE_KEY_BEBAS, JSON.stringify(dataRakBebas));
+        renderTabelRakBebas(dataRakBebas);
+        tutupPopupBebas();
+    }
 }
 
 function hapusItemDariPopup() {
