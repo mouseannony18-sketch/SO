@@ -7,8 +7,16 @@ let html5QrCode = null;
 let isFlashOn = false;
 
 async function loadMenu979() {
-    // Panggil header global dengan judul Rak 979 dan aktifkan tombol Sync Server & Download
     setupWorkspaceHeader("Rak 979 (Stock Opname)", "Memuat data...", true);
+
+    // Sembunyikan menu lain agar tidak bertumpuk
+    let menuBebasContainer = document.getElementById('menuBebasContainer');
+    if (menuBebasContainer) menuBebasContainer.classList.add('hidden');
+
+    let soArea = document.getElementById('soFormArea');
+    let adminArea = document.getElementById('adminFormArea');
+    if (soArea) soArea.classList.add('hidden');
+    if (adminArea) adminArea.classList.add('hidden');
 
     let menu979Container = document.getElementById('menu979Container');
     if (menu979Container) {
@@ -60,11 +68,6 @@ async function loadMenu979() {
             </div>
         `;
     }
-
-    let soArea = document.getElementById('soFormArea');
-    let adminArea = document.getElementById('adminFormArea');
-    if (soArea) soArea.classList.add('hidden');
-    if (adminArea) adminArea.classList.add('hidden');
 
     if (!window.Html5Qrcode) {
         let scriptTag = document.createElement('script');
