@@ -52,6 +52,18 @@ window.onload = function() {
     }
 };
 
+// Menangkap tombol "Back" fisik di HP / Browser agar kembali ke Menu Utama
+window.onpopstate = function(event) {
+    let workspaceCard = document.getElementById('workspaceCard');
+    let mainMenuCard = document.getElementById('mainMenuCard');
+
+    if (workspaceCard && !workspaceCard.classList.contains('hidden')) {
+        localStorage.removeItem('apo_active_menu');
+        workspaceCard.classList.add('hidden');
+        if (mainMenuCard) mainMenuCard.classList.remove('hidden');
+    }
+};
+
 // Fungsi Global Layar Penuh (Fullscreen)
 function toggleFullScreen() {
     let elem = document.documentElement;
@@ -205,6 +217,9 @@ function pilihMenu(jenis) {
     menuAktif = jenis;
     localStorage.setItem('apo_active_menu', jenis);
 
+    // Mendaftarkan riwayat state agar tombol back HP berfungsi
+    history.pushState({ menu: jenis }, "", "#" + jenis);
+
     document.getElementById('mainMenuCard').classList.add('hidden');
     document.getElementById('workspaceCard').classList.remove('hidden');
 
@@ -256,9 +271,21 @@ function bukaAreaAdmin() {
 
 function kembaliKeMenu() {
     localStorage.removeItem('apo_active_menu');
-    document.getElementById('workspaceCard').classList.add('hidden');
-    document.getElementById('sessionModal').classList.add('hidden');
-    document.getElementById('mainMenuCard').classList.remove('hidden');
+    sessionStorage.removeItem('apo_is_refreshed');
+
+    let workspaceCard = document.getElementById('workspaceCard');
+    if (workspaceCard) workspaceCard.classList.add('hidden');
+
+    let sessionModal = document.getElementById('sessionModal');
+    if (sessionModal) sessionModal.classList.add('hidden');
+
+    let mainMenuCard = document.getElementById('mainMenuCard');
+    if (mainMenuCard) {
+        mainMenuCard.classList.remove('hidden');
+        history.pushState("", document.title, window.location.pathname);
+    } else {
+        window.location.href = window.location.pathname;
+    }
 }
 
 function logout() {
