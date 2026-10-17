@@ -334,40 +334,43 @@ function downloadExcelCustomGlobal(judul, dataArray) {
         let totalOh = dataArray.reduce((sum, item) => sum + (parseInt(item.oh || item.OH || 0)), 0);
         let totalSelisih = dataArray.reduce((sum, item) => sum + (parseInt(item.selisih || item.Selisih || 0)), 0);
 
-        let xmlContent = '<?xml version="1.0" encoding="UTF-8"?>' +
-'<?mso-application progid="Excel.Sheet"?>' +
-'<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" ' +
-'xmlns:o="urn:schemas-microsoft-com:office:office" ' +
-'xmlns:x="urn:schemas-microsoft-com:office:excel" ' +
-'xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" ' +
-'xmlns:html="http://www.w3.org/TR/REC-html40">' +
-'<Styles>' +
-'<Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Center"/><Font ss:FontName="Arial" ss:Size="10"/></Style>' +
-'<Style ss:ID="TitleStyle"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Font ss:FontName="Arial" ss:Size="12" ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#059669" ss:Pattern="Solid"/></Style>' +
-'<Style ss:ID="SubtitleStyle"><Alignment ss:Horizontal="Left" ss:Vertical="Center"/><Font ss:FontName="Arial" ss:Size="10" ss:Italic="1" ss:Color="#065f46"/><Interior ss:Color="#D1FAE5" ss:Pattern="Solid"/></Style>' +
-'<Style ss:ID="HeaderStyle"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Font ss:FontName="Arial" ss:Size="10" ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#059669" ss:Pattern="Solid"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/></Borders></Style>' +
-'<Style ss:ID="CellCenter"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Font ss:FontName="Arial" ss:Size="10"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/></Borders></Style>' +
-'<Style ss:ID="CellRight"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:FontName="Arial" ss:Size="10"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/></Borders></Style>' +
-'<Style ss:ID="CellLeft"><Alignment ss:Horizontal="Left" ss:Vertical="Center"/><Font ss:FontName="Arial" ss:Size="10"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/></Borders></Style>' +
-'<Style ss:ID="CellRed"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Font ss:FontName="Arial" ss:Size="10" ss:Bold="1" ss:Color="#DC2626"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/></Borders></Style>' +
-'<Style ss:ID="TotalStyle"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Font ss:FontName="Arial" ss:Size="10" ss:Bold="1"/><Interior ss:Color="#FDE047" ss:Pattern="Solid"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#000000"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#000000"/></Borders></Style>' +
-'<Style ss:ID="TotalLabelStyle"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Font ss:FontName="Arial" ss:Size="10" ss:Bold="1"/><Interior ss:Color="#FDE047" ss:Pattern="Solid"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#000000"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#000000"/></Borders></Style>' +
-'</Styles>' +
-'<Worksheet ss:Name="Rak_979">' +
-'<Table>' +
-'<Column ss:Width="40"/><Column ss:Width="90"/><Column ss:Width="130"/><Column ss:Width="280"/><Column ss:Width="80"/><Column ss:Width="80"/><Column ss:Width="70"/>' +
-'<Row ss:Height="30"><Cell ss:MergeAcross="6" ss:StyleID="TitleStyle"><Data ss:Type="String">' + escapeXml(judul) + '</Data></Cell></Row>' +
-'<Row ss:Height="22"><Cell ss:MergeAcross="6" ss:StyleID="SubtitleStyle"><Data ss:Type="String"> ' + todayStr + '</Data></Cell></Row>' +
-'<Row ss:Height="10"/>' +
-'<Row ss:Height="25">' +
-'<Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">No.</Data></Cell>' +
-'<Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">PLU</Data></Cell>' +
-'<Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">Barcode</Data></Cell>' +
-'<Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">Nama Item</Data></Cell>' +
-'<Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">QTY Fisik</Data></Cell>' +
-'<Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">OH</Data></Cell>' +
-'<Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">Selisih</Data></Cell>' +
-'</Row>';
+        let htmlContent = `
+            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    body { font-family: Arial, sans-serif; }
+                    .title { font-size: 14px; font-weight: bold; text-align: center; background-color: #059669; color: #ffffff; height: 35px; vertical-align: middle; }
+                    .subtitle { font-size: 11px; font-style: italic; background-color: #D1FAE5; color: #065f46; height: 25px; vertical-align: middle; text-align: center; }
+                    th { background-color: #059669; color: #ffffff; font-weight: bold; text-align: center; border: 0.5pt solid #000000; padding: 6px; font-size: 11px; }
+                    td { border: 0.5pt solid #D1D5DB; padding: 5px; font-size: 10px; vertical-align: middle; }
+                    .text-center { text-align: center; }
+                    .text-right { text-align: right; }
+                    .text-left { text-align: left; }
+                    .text-red { color: #DC2626; font-weight: bold; text-align: center; }
+                    .total-cell { background-color: #FDE047; font-weight: bold; border: 1pt solid #000000; text-align: center; }
+                    .total-label { background-color: #FDE047; font-weight: bold; border: 1pt solid #000000; text-align: right; }
+                </style>
+            </head>
+            <body>
+                <table>
+                    <tr>
+                        <td colspan="7" class="title">${escapeHtml(judul)}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="7" class="subtitle">${todayStr}</td>
+                    </tr>
+                    <tr><td colspan="7"></td></tr>
+                    <tr>
+                        <th>No.</th>
+                        <th>PLU</th>
+                        <th>Barcode</th>
+                        <th>Nama Item</th>
+                        <th>QTY Fisik</th>
+                        <th>OH</th>
+                        <th>Selisih</th>
+                    </tr>
+        `;
 
         dataArray.forEach((item, index) => {
             let no = item.no || (index + 1);
@@ -377,28 +380,34 @@ function downloadExcelCustomGlobal(judul, dataArray) {
             let qty = item.qty ?? item.QTY ?? 0;
             let oh = item.oh ?? item.OH ?? 0;
             let selisih = item.selisih ?? item.Selisih ?? 0;
-            let selisihStyleTag = selisih !== 0 ? 'CellRed' : 'CellCenter';
+            let selisihClass = selisih !== 0 ? 'text-red' : 'text-center';
 
-            xmlContent += '<Row ss:Height="20">' +
-                '<Cell ss:StyleID="CellCenter"><Data ss:Type="Number">' + no + '</Data></Cell>' +
-                '<Cell ss:StyleID="CellRight"><Data ss:Type="String">' + escapeXml(String(plu)) + '</Data></Cell>' +
-                '<Cell ss:StyleID="CellRight"><Data ss:Type="String">' + escapeXml(String(barcode)) + '</Data></Cell>' +
-                '<Cell ss:StyleID="CellLeft"><Data ss:Type="String">' + escapeXml(String(nama)) + '</Data></Cell>' +
-                '<Cell ss:StyleID="CellCenter"><Data ss:Type="Number">' + qty + '</Data></Cell>' +
-                '<Cell ss:StyleID="CellCenter"><Data ss:Type="Number">' + oh + '</Data></Cell>' +
-                '<Cell ss:StyleID="' + selisihStyleTag + '"><Data ss:Type="Number">' + selisih + '</Data></Cell>' +
-                '</Row>';
+            htmlContent += `
+                <tr>
+                    <td class="text-center">${no}</td>
+                    <td class="text-right">${escapeHtml(String(plu))}</td>
+                    <td class="text-right">${escapeHtml(String(barcode))}</td>
+                    <td class="text-left">${escapeHtml(String(nama))}</td>
+                    <td class="text-center">${qty}</td>
+                    <td class="text-center">${oh}</td>
+                    <td class="${selisihClass}">${selisih}</td>
+                </tr>
+            `;
         });
 
-        xmlContent += '<Row ss:Height="24">' +
-            '<Cell ss:MergeAcross="3" ss:StyleID="TotalLabelStyle"><Data ss:Type="String">TOTAL KESELURUHAN: </Data></Cell>' +
-            '<Cell ss:StyleID="TotalStyle"><Data ss:Type="Number">' + totalQty + '</Data></Cell>' +
-            '<Cell ss:StyleID="TotalStyle"><Data ss:Type="Number">' + totalOh + '</Data></Cell>' +
-            '<Cell ss:StyleID="TotalStyle"><Data ss:Type="Number">' + totalSelisih + '</Data></Cell>' +
-            '</Row>' +
-            '</Table></Worksheet></Workbook>';
+        htmlContent += `
+                    <tr>
+                        <td colspan="4" class="total-label">TOTAL KESELURUHAN:</td>
+                        <td class="total-cell">${totalQty}</td>
+                        <td class="total-cell">${totalOh}</td>
+                        <td class="total-cell">${totalSelisih}</td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+        `;
 
-        let bytes = new TextEncoder().encode(xmlContent);
+        let bytes = new TextEncoder().encode(htmlContent);
         let binString = Array.from(bytes, (byte) => String.fromCodePoint(byte)).join("");
         let base64Content = btoa(binString);
 
@@ -419,17 +428,14 @@ function downloadExcelCustomGlobal(judul, dataArray) {
     }
 }
 
-function escapeXml(unsafe) {
+function escapeHtml(unsafe) {
     if (!unsafe) return "";
-    return String(unsafe).replace(/[<>&'"]/g, function (c) {
-        switch (c) {
-            case '<': return '&lt;';
-            case '>': return '&gt;';
-            case '&': return '&amp;';
-            case '\'': return '&apos;';
-            case '"': return '&quot;';
-        }
-    });
+    return String(unsafe)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
 function cetakPDFGlobal(judul, dataArray) {
