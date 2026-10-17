@@ -207,3 +207,58 @@ th { background: var(--table-th); }
 }
 .modal-box h3 { margin-top: 0; color: #ff4d4d; }
 .modal-box p { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+
+/* CSS layar penuh Menu 979 */
+.table-full-container {
+    width: 100%;
+    max-height: calc(100vh - 220px);
+    overflow-y: auto;
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+#tabelMenu979 {
+    width: 100%;
+    white-space: nowrap;
+}
+
+#tabelMenu979 th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--table-th);
+}
+
+.qty-control-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.qty-btn-adjust {
+    background: #374151;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 28px;
+    height: 32px;
+    font-weight: bold;
+    cursor: pointer;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.qty-input-box {
+    width: 50px !important;
+    height: 32px !important;
+    text-align: center;
+    padding: 2px !important;
+    margin: 0 !important;
+    font-weight: bold;
+    font-size: 13px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
