@@ -326,45 +326,192 @@ function downloadExcelCustomGlobal(judul, dataArray) {
     let totalOh = dataArray.reduce((sum, item) => sum + (parseInt(item.oh || item.OH || 0)), 0);
     let totalSelisih = dataArray.reduce((sum, item) => sum + (parseInt(item.selisih || item.Selisih || 0)), 0);
 
-    // Menyusun data dalam bentuk array standar SheetJS yang 100% aman dibaca semua aplikasi Excel/Spreadsheet
-    let sheetData = [
-        [judul],
-        [todayStr],
-        [],
-        ["No.", "PLU", "Barcode", "Nama Item", "QTY Fisik", "OH (On Hand)", "Selisih"]
-    ];
+    // Membuat file berformat XML Spreadsheet resmi Microsoft Excel agar warna dan border terbaca sempurna
+    let xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+          xmlns:o="urn:schemas-microsoft-com:office:office"
+          xmlns:x="urn:schemas-microsoft-com:office:excel"
+          xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+          xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Center"/>
+   <Font ss:FontName="Arial" ss:Size="10"/>
+  </Style>
+  <Style ss:ID="TitleStyle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Arial" ss:Size="12" ss:Bold="1" ss:Color="#FFFFFF"/>
+   <Interior ss:Color="#059669" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="SubtitleStyle">
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+   <Font ss:FontName="Arial" ss:Size="10" ss:Italic="1" ss:Color="#065f46"/>
+   <Interior ss:Color="#D1FAE5" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="HeaderStyle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Arial" ss:Size="10" ss:Bold="1" ss:Color="#FFFFFF"/>
+   <Interior ss:Color="#059669" ss:Pattern="Solid"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="CellCenter">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Arial" ss:Size="10"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="CellRight">
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+   <Font ss:FontName="Arial" ss:Size="10"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="CellLeft">
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+   <Font ss:FontName="Arial" ss:Size="10"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="CellRed">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Arial" ss:Size="10" ss:Bold="1" ss:Color="#DC2626"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D1D5DB"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="TotalStyle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Arial" ss:Size="10" ss:Bold="1"/>
+   <Interior ss:Color="#FDE047" ss:Pattern="Solid"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#000000"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#000000"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="TotalLabelStyle">
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+   <Font ss:FontName="Arial" ss:Size="10" ss:Bold="1"/>
+   <Interior ss:Color="#FDE047" ss:Pattern="Solid"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#000000"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#000000"/>
+   </Borders>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Rak_979">
+  <Table>
+   <Column ss:Width="40"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="130"/>
+   <Column ss:Width="280"/>
+   <Column ss:Width="80"/>
+   <Column ss:Width="80"/>
+   <Column ss:Width="70"/>
+   
+   <!-- Baris 1: Judul Utama -->
+   <Row ss:Height="30">
+    <Cell ss:MergeAcross="6" ss:StyleID="TitleStyle"><Data ss:Type="String">${judul}</Data></Cell>
+   </Row>
+   <!-- Baris 2: Tanggal -->
+   <Row ss:Height="22">
+    <Cell ss:MergeAcross="6" ss:StyleID="SubtitleStyle"><Data ss:Type="String">  ${todayStr}</Data></Cell>
+   </Row>
+   <!-- Baris 3: Kosong -->
+   <Row ss:Height="10"/>
+   <!-- Baris 4: Header Kolom -->
+   <Row ss:Height="25">
+    <Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">No.</Data></Cell>
+    <Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">PLU</Data></Cell>
+    <Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">Barcode</Data></Cell>
+    <Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">Nama Item</Data></Cell>
+    <Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">QTY Fisik</Data></Cell>
+    <Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">OH</Data></Cell>
+    <Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">Selisih</Data></Cell>
+   </Row>
+`;
 
     dataArray.forEach((item, index) => {
-        sheetData.push([
-            item.no || (index + 1),
-            item.plu || item.PLU || "-",
-            item.barcode || item.Barcode || "-",
-            item.namaItem || item.Nama_Item || item.nama || "-",
-            item.qty ?? item.QTY ?? 0,
-            item.oh ?? item.OH ?? 0,
-            item.selisih ?? item.Selisih ?? 0
-        ]);
+        let no = item.no || (index + 1);
+        let plu = item.plu || item.PLU || "-";
+        let barcode = item.barcode || item.Barcode || "-";
+        let nama = item.namaItem || item.Nama_Item || item.nama || "-";
+        let qty = item.qty ?? item.QTY ?? 0;
+        let oh = item.oh ?? item.OH ?? 0;
+        let selisih = item.selisih ?? item.Selisih ?? 0;
+
+        let selisihStyleTag = selisih !== 0 ? 'CellRed' : 'CellCenter';
+
+        xmlContent += `
+   <Row ss:Height="20">
+    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">${no}</Data></Cell>
+    <Cell ss:StyleID="CellRight"><Data ss:Type="String">${plu}</Data></Cell>
+    <Cell ss:StyleID="CellRight"><Data ss:Type="String">${barcode}</Data></Cell>
+    <Cell ss:StyleID="CellLeft"><Data ss:Type="String">${escapeXml(nama)}</Data></Cell>
+    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">${qty}</Data></Cell>
+    <Cell ss:StyleID="CellCenter"><Data ss:Type="Number">${oh}</Data></Cell>
+    <Cell ss:StyleID="${selisihStyleTag}"><Data ss:Type="Number">${selisih}</Data></Cell>
+   </Row>`;
     });
 
-    sheetData.push([]);
-    sheetData.push(["TOTAL KESELURUHAN", "", "", "", totalQty, totalOh, totalSelisih]);
+    xmlContent += `
+   <!-- Baris Total -->
+   <Row ss:Height="24">
+    <Cell ss:MergeAcross="3" ss:StyleID="TotalLabelStyle"><Data ss:Type="String">TOTAL KESELURUHAN: </Data></Cell>
+    <Cell ss:StyleID="TotalStyle"><Data ss:Type="Number">${totalQty}</Data></Cell>
+    <Cell ss:StyleID="TotalStyle"><Data ss:Type="Number">${totalOh}</Data></Cell>
+    <Cell ss:StyleID="TotalStyle"><Data ss:Type="Number">${totalSelisih}</Data></Cell>
+   </Row>
+  </Table>
+ </Worksheet>
+</Workbook>`;
 
-    let ws = XLSX.utils.aoa_to_sheet(sheetData);
+    let blob = new Blob([xmlContent], { type: 'application/vnd.ms-excel' });
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement('a');
+    a.href = url;
+    a.download = judul.replace(/[^a-zA-Z0-9]/g, "_") + ".xls";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
 
-    // Pengaturan lebar kolom agar rapi
-    ws['!cols'] = [
-        { wch: 6 },   // No
-        { wch: 12 },  // PLU
-        { wch: 16 },  // Barcode
-        { wch: 38 },  // Nama Item
-        { wch: 12 },  // QTY Fisik
-        { wch: 12 },  // OH
-        { wch: 10 }   // Selisih
-    ];
-
-    let wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Laporan_SO");
-    XLSX.writeFile(wb, judul.replace(/[^a-zA-Z0-9]/g, "_") + ".xlsx");
+// Helper untuk menghindari karakter khusus merusak XML
+function escapeXml(unsafe) {
+    return unsafe.replace(/[<>&'"]/g, function (c) {
+        switch (c) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case '\'': return '&apos;';
+            case '"': return '&quot;';
+        }
+    });
 }
 
 
