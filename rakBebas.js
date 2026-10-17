@@ -1,0 +1,458 @@
+// =========================================================
+// MODUL RAK BEBAS / CUSTOMIZE (rakBebas.js)
+// =========================================================
+
+let dataRakBebas = [];
+const STORAGE_KEY_BEBAS = "apo_data_rak_bebas";
+let currentBebasIndex = null;
+let html5QrCodeBebas = null;
+let isFlashOnBebas = false;
+let statusFilterSelisihBebas = false;
+
+async function loadMenuRakBebas() {
+    // Atur header global workspace untuk Rak Bebas
+    setupWorkspaceHeader("Rak Bebas / Customize", "Memuat item bebas...", false);
+
+    // Pastikan container menu bebas aktif
+    let container = document.getElementById('workspaceCard');
+    let menuBebasContainer = document.getElementById('menuBebasContainer');
+    
+    if (!menuBebasContainer) {
+        menuBebasContainer = document.createElement('div');
+        menuBebasContainer.id = 'menuBebasContainer';
+        container.appendChild(menuBebasContainer);
+    }
+    menuBebasContainer.classList.remove('hidden');
+
+    // Render layout UI yang persis seperti Rak 979
+    menuBebasContainer.innerHTML = `
+        <!-- BARIS 1: TOMBOL RESET & CEK SELISIH -->
+        <div class="top-action-bar-row1">
+            <button onclick="konfirmasiResetRakBebas()" class="action-top-btn reset-btn" title="Reset Semua Data Rak Bebas">🗑️ Reset Data</button>
+            <button onclick="filterSelisihToggleBebas()" id="btnCekSelisihBebas" class="action-top-btn selisih-btn">📊 Cek Selisih</button>
+        </div>
+
+        <!-- BARIS 2: PENCARIAN & TAMBAH / SCAN BARCODE -->
+        <div class="top-action-bar-row2">
+            <div class="search-box-wrapper">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="inputCariBebas" onkeydown="handleKeyInputRakBebas(event, this.value)" oninput="handlePencarianBebas(this.value)" placeholder="Ketik Barcode / PLU lalu Enter..." class="modern-search-input" />
+                <button id="btnClearSearchBebas" onclick="bersihkanPencarianBebas()" class="clear-search-btn hidden">×</button>
+            </div>
+            <button onclick="bukaScannerBebas()" class="scan-btn">📷 Scan</button>
+        </div>
+
+        <!-- AREA SCANNER KAMERA -->
+        <div id="scannerContainerBebas" class="scanner-box hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <b style="font-size: 12px; color: #38bdf8;">Arahkan Kamera ke Barcode Barang</b>
+                <div style="display: flex; gap: 6px;">
+                    <button id="flashToggleBtnBebas" onclick="toggleFlashBebas()" class="flash-ctrl-btn">⚡ Flash: OFF</button>
+                    <button onclick="tutupScannerBebas()" class="close-scanner-btn">Tutup</button>
+                </div>
+            </div>
+            <div id="readerBebas"></div>
+        </div>
+
+        <!-- TABEL UTAMA RAK BEBAS -->
+        <div class="table-full-container">
+            <table id="tabelRakBebas">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">#</th>
+                        <th>PLU / Barcode</th>
+                        <th>Nama Item</th>
+                        <th style="text-align: center; width: 110px;">QTY (Fisik)</th>
+                        <th style="text-align: center; width: 50px;">OH</th>
+                        <th style="text-align: center; width: 60px;">Selisih</th>
+                        <th style="text-align: center; width: 50px;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyRakBebas"></tbody>
+            </table>
+        </div>
+    `;
+
+    // Sembunyikan form lain
+    let soArea = document.getElementById('soFormArea');
+    let adminArea = document.getElementById('adminFormArea');
+    let menu979Container = document.getElementById('menu979Container');
+    if (soArea) soArea.classList.add('hidden');
+    if (adminArea) adminArea.classList.add('hidden');
+    if (menu979Container) menu979Container.classList.add('hidden');
+
+    // Muat pustaka HTML5-QRCode jika belum ada
+    if (!window.Html5Qrcode) {
+        let scriptTag = document.createElement('script');
+        scriptTag.src = "https://unpkg.com/html5-qrcode";
+        document.head.appendChild(scriptTag);
+    }
+
+    // Modal Pop-up Qty untuk Rak Bebas
+    if (!document.getElementById('popupQtyModalBebas')) {
+        let modalDiv = document.createElement('div');
+        modalDiv.id = 'popupQtyModalBebas';
+        modalDiv.className = 'modern-modal-overlay hidden';
+        modalDiv.innerHTML = `
+            <div class="modern-modal-card">
+                <div class="modern-modal-header">
+                    <span class="modal-product-title" id="modalNamaItemBebas">-</span>
+                    <button onclick="tutupPopupBebas()" class="modern-close-x">&times;</button>
+                </div>
+                
+                <div class="modern-meta-info">
+                    <span>PLU: <b id="modalPluBebas">-</b></span>
+                    <span>•</span>
+                    <span>Barcode: <b id="modalBarcodeBebas">-</b></span>
+                </div>
+
+                <div class="modern-input-box-area">
+                    <div class="modern-current-label">
+                        Qty Tersimpan: <span id="modalCurrentQtyBebas">0</span>
+                    </div>
+                    <label class="modern-input-label">Tambah Qty Fisik:</label>
+                    
+                    <div class="modern-stepper-row">
+                        <button onclick="ubahNilaiBebas(-1)" class="modern-step-btn">-</button>
+                        <input type="number" id="modalInputTambahBebas" value="0" class="modern-number-input" />
+                        <button onclick="ubahNilaiBebas(1)" class="modern-step-btn">+</button>
+                    </div>
+                </div>
+
+                <div class="modern-btn-row">
+                    <button onclick="tutupPopupBebas()" class="modern-btn-batal">Batal</button>
+                    <button onclick="simpanQtyBebas()" class="modern-btn-simpan">Simpan</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modalDiv);
+    }
+
+    // Muat data lokal Rak Bebas
+    muatDataLokalRakBebas();
+}
+
+function muatDataLokalRakBebas() {
+    let saved = localStorage.getItem(STORAGE_KEY_BEBAS);
+    if (saved) {
+        try {
+            dataRakBebas = JSON.parse(saved);
+        } catch (e) {
+            dataRakBebas = [];
+        }
+    } else {
+        dataRakBebas = [];
+    }
+    renderTabelRakBebas(dataRakBebas);
+    setupWorkspaceHeader("Rak Bebas / Customize", `${dataRakBebas.length} item tersimpan`, false, `<button onclick="exportExcelRakBebas()">📥 Download / Cetak</button>`);
+}
+
+function renderTabelRakBebas(listData) {
+    let tbody = document.getElementById('tbodyRakBebas');
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    if (listData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 20px;">Belum ada item ditambahkan. Ketik barcode atau scan di atas.</td></tr>`;
+        return;
+    }
+
+    listData.forEach((item, idx) => {
+        let realIndex = dataRakBebas.findIndex(d => d.barcode === item.barcode || d.plu === item.plu);
+        let selisihWarna = item.selisih !== 0 ? "color: #ef4444; font-weight: bold;" : "";
+
+        let tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="text-align: center; font-size: 12px;">${idx + 1}</td>
+            <td style="font-size: 12px;"><b>${item.plu || '-'}</b><br><small style="color: var(--text-muted);">${item.barcode}</small></td>
+            <td style="font-size: 12px;">${item.namaItem}</td>
+            <td style="text-align: center;">
+                <div onclick="bukaPopupBebas(${realIndex})" class="qty-pill-box" title="Klik untuk edit qty">
+                    <span style="font-weight: bold; font-size: 14px; color: #38bdf8;">${item.qty}</span>
+                    <small style="font-size: 9px; display: block; color: var(--text-muted);">ketuk edit</small>
+                </div>
+            </td>
+            <td style="text-align: center; font-size: 13px;">${item.oh}</td>
+            <td style="text-align: center; font-size: 13px; ${selisihWarna}">${item.selisih}</td>
+            <td style="text-align: center;">
+                <button onclick="hapusItemRakBebas(${realIndex})" style="background: #dc2626; color: white; border: none; border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer;">Hapus</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Handler saat mengetik Barcode/PLU lalu tekan Enter
+async function handleKeyInputRakBebas(event, val) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        let query = val.trim();
+        if (!query) return;
+
+        await tambahAtauCariItemRakBebas(query);
+        let inputEl = document.getElementById('inputCariBebas');
+        inputEl.value = "";
+        bersihkanPencarianBebas();
+    }
+}
+
+function handlePencarianBebas(val) {
+    let clearBtn = document.getElementById('btnClearSearchBebas');
+    if (val.length > 0) {
+        clearBtn.classList.remove('hidden');
+    } else {
+        clearBtn.classList.add('hidden');
+    }
+
+    let query = val.toLowerCase().trim();
+    if (!query) {
+        renderTabelRakBebas(dataRakBebas);
+        return;
+    }
+
+    let filtered = dataRakBebas.filter(item => 
+        (item.plu && item.plu.toLowerCase().includes(query)) ||
+        (item.barcode && item.barcode.toLowerCase().includes(query)) ||
+        (item.namaItem && item.namaItem.toLowerCase().includes(query))
+    );
+    renderTabelRakBebas(filtered);
+}
+
+function bersihkanPencarianBebas() {
+    let inputEl = document.getElementById('inputCariBebas');
+    inputEl.value = "";
+    document.getElementById('btnClearSearchBebas').classList.add('hidden');
+    renderTabelRakBebas(dataRakBebas);
+    inputEl.focus();
+}
+
+// Fungsi utama menambah item baru berdasarkan Barcode / PLU
+async function tambahAtauCariItemRakBebas(code) {
+    // Cek apakah item sudah ada di daftar Rak Bebas
+    let existing = dataRakBebas.find(d => d.barcode === code || d.plu === code);
+    if (existing) {
+        let idx = dataRakBebas.indexOf(existing);
+        bukaPopupBebas(idx);
+        return;
+    }
+
+    // Jika belum ada, panggil server /api/scan untuk mengambil nama & stok sistem (OH)
+    let savedToken = localStorage.getItem('apo_token');
+    let isSkipped = localStorage.getItem('apo_skipped') === 'true';
+
+    let namaBarang = "Barang Custom / Manual";
+    let systemStock = 0;
+    let pluVal = code;
+    let barcodeVal = code;
+
+    if (savedToken && !isSkipped) {
+        try {
+            let response = await fetch('/api/scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ barcode: code, token: savedToken })
+            });
+            let result = await response.json();
+            if (response.ok && result.success) {
+                namaBarang = result.productName || "Barang Scan";
+                systemStock = parseInt(result.systemStock) || 0;
+                if (result.raw && result.raw.plu) pluVal = result.raw.plu;
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    // Tambahkan item baru ke array
+    let newItem = {
+        no: dataRakBebas.length + 1,
+        plu: pluVal,
+        barcode: barcodeVal,
+        namaItem: namaBarang,
+        qty: 0,
+        oh: systemStock,
+        selisih: 0 - systemStock
+    };
+
+    dataRakBebas.push(newItem);
+    localStorage.setItem(STORAGE_KEY_BEBAS, JSON.stringify(dataRakBebas));
+    renderTabelRakBebas(dataRakBebas);
+    
+    // Langsung buka popup Qty agar kasir bisa langsung input jumlah fisiknya
+    bukaPopupBebas(dataRakBebas.length - 1);
+}
+
+// Scanner Kamera untuk Rak Bebas
+async function bukaScannerBebas() {
+    let scannerBox = document.getElementById('scannerContainerBebas');
+    scannerBox.classList.remove('hidden');
+    isFlashOnBebas = false;
+    updateFlashButtonUIBebas();
+
+    if (!html5QrCodeBebas) {
+        html5QrCodeBebas = new Html5Qrcode("readerBebas");
+    }
+
+    try {
+        let devices = await Html5Qrcode.getCameras();
+        if (devices && devices.length > 0) {
+            let selectedCameraId = devices[0].id;
+            let backCameras = devices.filter(device => {
+                let label = device.label.toLowerCase();
+                return label.includes('back') || label.includes('rear') || label.includes('belakang');
+            });
+
+            if (backCameras.length > 0) {
+                selectedCameraId = backCameras[backCameras.length - 1].id;
+            } else if (devices.length > 1) {
+                selectedCameraId = devices[1].id;
+            }
+
+            await html5QrCodeBebas.start(
+                selectedCameraId,
+                { fps: 20, qrbox: { width: 260, height: 140 } },
+                (decodedText) => {
+                    tutupScannerBebas();
+                    tambahAtauCariItemRakBebas(decodedText.trim());
+                },
+                (errorMessage) => {}
+            );
+        } else {
+            throw "Tidak ada kamera.";
+        }
+    } catch (err) {
+        html5QrCodeBebas.start(
+            { facingMode: "environment" },
+            { fps: 15, qrbox: { width: 260, height: 140 } },
+            (decodedText) => {
+                tutupScannerBebas();
+                tambahAtauCariItemRakBebas(decodedText.trim());
+            },
+            (errorMessage) => {}
+        ).catch(fallbackErr => {
+            alert("Gagal mengaktifkan kamera: " + fallbackErr);
+            scannerBox.classList.add('hidden');
+        });
+    }
+}
+
+function toggleFlashBebas() {
+    if (!html5QrCodeBebas || !html5QrCodeBebas.isScanning) return;
+    isFlashOnBebas = !isFlashOnBebas;
+    html5QrCodeBebas.applyVideoConstraints({ advanced: [{ torch: isFlashOnBebas }] }).then(() => {
+        updateFlashButtonUIBebas();
+    }).catch(() => {
+        isFlashOnBebas = !isFlashOnBebas;
+        alert("Fitur Senter tidak didukung perangkat ini.");
+    });
+}
+
+function updateFlashButtonUIBebas() {
+    let btn = document.getElementById('flashToggleBtnBebas');
+    if (!btn) return;
+    if (isFlashOnBebas) {
+        btn.style.background = "#eab308";
+        btn.style.color = "#000";
+        btn.innerText = "⚡ Flash: ON";
+    } else {
+        btn.style.background = "#4b5563";
+        btn.style.color = "#fff";
+        btn.innerText = "⚡ Flash: OFF";
+    }
+}
+
+function tutupScannerBebas() {
+    let scannerBox = document.getElementById('scannerContainerBebas');
+    scannerBox.classList.add('hidden');
+    if (html5QrCodeBebas && html5QrCodeBebas.isScanning) {
+        if (isFlashOnBebas) {
+            html5QrCodeBebas.applyVideoConstraints({ advanced: [{ torch: false }] }).catch(() => {});
+            isFlashOnBebas = false;
+        }
+        html5QrCodeBebas.stop().then(() => html5QrCodeBebas.clear()).catch(err => console.error(err));
+    }
+}
+
+// Modal Pop-up Qty Logic
+function bukaPopupBebas(index) {
+    currentBebasIndex = index;
+    let item = dataRakBebas[index];
+
+    document.getElementById('modalNamaItemBebas').innerText = item.namaItem;
+    document.getElementById('modalPluBebas').innerText = item.plu || "-";
+    document.getElementById('modalBarcodeBebas').innerText = item.barcode;
+    document.getElementById('modalCurrentQtyBebas').innerText = item.qty;
+    document.getElementById('modalInputTambahBebas').value = "0";
+
+    document.getElementById('popupQtyModalBebas').classList.remove('hidden');
+    document.getElementById('modalInputTambahBebas').focus();
+    document.getElementById('modalInputTambahBebas').select();
+}
+
+function tutupPopupBebas() {
+    document.getElementById('popupQtyModalBebas').classList.add('hidden');
+    currentBebasIndex = null;
+}
+
+function ubahNilaiBebas(delta) {
+    let inputEl = document.getElementById('modalInputTambahBebas');
+    let val = parseInt(inputEl.value) || 0;
+    val += delta;
+    if (val < 0) val = 0;
+    inputEl.value = val;
+}
+
+function simpanQtyBebas() {
+    if (currentBebasIndex === null) return;
+    let tambah = parseInt(document.getElementById('modalInputTambahBebas').value) || 0;
+    let item = dataRakBebas[currentBebasIndex];
+
+    item.qty += tambah;
+    if (item.qty < 0) item.qty = 0;
+    item.selisih = item.qty - item.oh;
+
+    localStorage.setItem(STORAGE_KEY_BEBAS, JSON.stringify(dataRakBebas));
+    renderTabelRakBebas(dataRakBebas);
+    tutupPopupBebas();
+}
+
+function hapusItemRakBebas(index) {
+    if (confirm("Hapus item ini dari daftar Rak Bebas?")) {
+        dataRakBebas.splice(index, 1);
+        // Perbarui nomor urut (no)
+        dataRakBebas.forEach((d, idx) => d.no = idx + 1);
+        localStorage.setItem(STORAGE_KEY_BEBAS, JSON.stringify(dataRakBebas));
+        renderTabelRakBebas(dataRakBebas);
+        setupWorkspaceHeader("Rak Bebas / Customize", `${dataRakBebas.length} item tersimpan`, false, `<button onclick="exportExcelRakBebas()">📥 Download / Cetak</button>`);
+    }
+}
+
+function konfirmasiResetRakBebas() {
+    if (confirm("PERINGATAN: Apakah Anda yakin ingin mereset dan menghapus semua item di Rak Bebas?")) {
+        localStorage.removeItem(STORAGE_KEY_BEBAS);
+        dataRakBebas = [];
+        renderTabelRakBebas(dataRakBebas);
+        setupWorkspaceHeader("Rak Bebas / Customize", "Data direset", false, `<button onclick="exportExcelRakBebas()">📥 Download / Cetak</button>`);
+        alert("Rak Bebas berhasil dikosongkan!");
+    }
+}
+
+function filterSelisihToggleBebas() {
+    statusFilterSelisihBebas = !statusFilterSelisihBebas;
+    let btn = document.getElementById('btnCekSelisihBebas');
+    
+    if (statusFilterSelisihBebas) {
+        btn.style.background = "#dc2626";
+        btn.innerText = "📋 Tampilkan Semua";
+        let filtered = dataRakBebas.filter(item => item.selisih !== 0);
+        renderTabelRakBebas(filtered);
+    } else {
+        btn.style.background = "#2563eb";
+        btn.innerText = "📊 Cek Selisih";
+        renderTabelRakBebas(dataRakBebas);
+    }
+}
+
+function exportExcelRakBebas() {
+    exportUniversalReport("Stock Opname - Rak Bebas / Customize", dataRakBebas);
+}
