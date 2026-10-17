@@ -3,7 +3,8 @@ const CSV_URL = "https://docs.google.com/spreadsheets/d/15Albul63206zfgQ8vaa0krg
 let dataMenu979 = [];
 const STORAGE_KEY_979 = "apo_data_menu_979";
 let currentIndexAktif = null;
-let html5QrCode = null; // Variabel scanner kamera
+let html5QrCode = null;
+let isFlashOn = false;
 
 async function loadMenu979() {
     let container = document.getElementById('workspaceCard');
@@ -18,7 +19,6 @@ async function loadMenu979() {
             <button onclick="sinkronisasiStokServer(true)" style="background: #2563eb; width: auto; padding: 6px 12px; font-size: 12px; margin: 0;" title="Perbarui stok sistem dari server">🔄 Sync Server</button>
         </div>
         
-        <!-- 3 MENU UTAMA BARU: PENCARIAN, SCAN KAMERA, RESET -->
         <div class="top-action-bar">
             <div class="search-box-wrapper">
                 <span class="search-icon">🔍</span>
@@ -30,11 +30,14 @@ async function loadMenu979() {
 
         <p id="statusLoad979" style="text-align: center; color: var(--text-muted); font-size: 12px; margin-bottom: 10px;">Memuat data master...</p>
         
-        <!-- AREA SCANNER KAMERA (TERSEMBUNYI SECARA DEFAULT) -->
+        <!-- AREA SCANNER KAMERA + KONTROL FLASH -->
         <div id="scannerContainer" class="scanner-box hidden">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <b style="font-size: 12px; color: #38bdf8;">Arahkan Kamera ke Barcode Barang</b>
-                <button onclick="tutupScannerKamera()" class="close-scanner-btn">Tutup Kamera</button>
+                <b style="font-size: 12px; color: #38bdf8;">Arahkan Kamera ke Barcode</b>
+                <div style="display: flex; gap: 6px;">
+                    <button id="flashToggleBtn" onclick="toggleFlashLight()" class="flash-ctrl-btn">⚡ Flash: OFF</button>
+                    <button onclick="tutupScannerKamera()" class="close-scanner-btn">Tutup</button>
+                </div>
             </div>
             <div id="reader"></div>
         </div>
@@ -62,14 +65,12 @@ async function loadMenu979() {
         <button onclick="kembaliKeMenu()" class="back-btn" style="padding: 12px;">Kembali ke Menu Utama</button>
     `;
 
-    // Pastikan pustaka HTML5 QR Code dimuat secara dinamis untuk fitur kamera scanner
     if (!window.Html5Qrcode) {
         let scriptTag = document.createElement('script');
         scriptTag.src = "https://unpkg.com/html5-qrcode";
         document.head.appendChild(scriptTag);
     }
 
-    // Elemen HTML Popup Modern
     if (!document.getElementById('popupQtyModal')) {
         let modalDiv = document.createElement('div');
         modalDiv.id = 'popupQtyModal';
@@ -179,7 +180,6 @@ function renderTabel979(listData) {
     tbody.innerHTML = "";
 
     listData.forEach((item) => {
-        // Cari index asli item di array utama `dataMenu979`
         let realIndex = dataMenu979.findIndex(d => d.plu === item.plu);
         let selisihWarna = item.selisih !== 0 ? "color: #ef4444;" : "";
         
@@ -201,7 +201,6 @@ function renderTabel979(listData) {
     });
 }
 
-// 1. FITUR PENCARIAN REAL-TIME
 function filterPencarianRealtime(keyword) {
     let query = keyword.toLowerCase().trim();
     if (!query) {
@@ -218,30 +217,79 @@ function filterPencarianRealtime(keyword) {
     renderTabel979(filtered);
 }
 
-// 2. FITUR SCANNER BARCODE KAMERA
+// Buka Kamera dengan Memaksa Kamera Utama (Normal / Belakang Utama)
 function bukaScannerKamera() {
     let scannerBox = document.getElementById('scannerContainer');
     scannerBox.classList.remove('hidden');
+    isFlashOn = false;
+    updateFlashButtonUI();
 
     if (!html5QrCode) {
         html5QrCode = new Html5Qrcode("reader");
     }
 
+    // Menggunakan exact constraints ke kamera belakang utama agar terhindar dari lensa wide/ultrawide
+    let cameraConfig = { 
+        facingMode: { exact: "environment" } 
+    };
+
     html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 150 } },
+        cameraConfig,
+        { 
+            fps: 15, 
+            qrbox: { width: 260, height: 140 },
+            aspectRatio: 1.777778
+        },
         (decodedText) => {
-            // Barcode berhasil terbaca!
             tutupScannerKamera();
             cariDanBukaItemDariBarcode(decodedText.trim());
         },
-        (errorMessage) => {
-            // Error scan abaikan agar tidak mengganggu
-        }
+        (errorMessage) => {}
     ).catch(err => {
-        alert("Gagal mengaktifkan kamera: " + err);
-        scannerBox.classList.add('hidden');
+        // Fallback jika exact environment ditolak browser, gunakan environment biasa
+        html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 15, qrbox: { width: 260, height: 140 } },
+            (decodedText) => {
+                tutupScannerKamera();
+                cariDanBukaItemDariBarcode(decodedText.trim());
+            },
+            (errorMessage) => {}
+        ).catch(fallbackErr => {
+            alert("Gagal mengaktifkan kamera: " + fallbackErr);
+            scannerBox.classList.add('hidden');
+        });
     });
+}
+
+// Kontrol LED Flash (Senter)
+function toggleFlashLight() {
+    if (!html5QrCode || !html5QrCode.isScanning) return;
+
+    isFlashOn = !isFlashOn;
+    html5QrCode.applyVideoConstraints({
+        advanced: [{ torch: isFlashOn }]
+    }).then(() => {
+        updateFlashButtonUI();
+    }).catch(err => {
+        console.warn("Perangkat atau browser tidak mendukung kontrol Flash:", err);
+        isFlashOn = !isFlashOn; // Kembalikan status jika gagal
+        alert("Fitur Flash (Senter) tidak didukung pada perangkat/browser ini.");
+    });
+}
+
+function updateFlashButtonUI() {
+    let btn = document.getElementById('flashToggleBtn');
+    if (!btn) return;
+    if (isFlashOn) {
+        btn.style.background = "#eab308"; // Kuning menyala
+        btn.style.color = "#000";
+        btn.innerText = "⚡ Flash: ON";
+    } else {
+        btn.style.background = "#4b5563"; // Abu-abu
+        btn.style.color = "#fff";
+        btn.innerText = "⚡ Flash: OFF";
+    }
 }
 
 function tutupScannerKamera() {
@@ -249,17 +297,20 @@ function tutupScannerKamera() {
     scannerBox.classList.add('hidden');
 
     if (html5QrCode && html5QrCode.isScanning) {
+        // Matikan flash sebelum menutup kamera
+        if (isFlashOn) {
+            html5QrCode.applyVideoConstraints({ advanced: [{ torch: false }] }).catch(() => {});
+            isFlashOn = false;
+        }
         html5QrCode.stop().then(() => {
             html5QrCode.clear();
         }).catch(err => console.error(err));
     }
 }
 
-// Mencocokkan hasil scan kamera dengan daftar item SO 979
 function cariDanBukaItemDariBarcode(scannedBarcode) {
     let foundIndex = dataMenu979.findIndex(item => item.barcode === scannedBarcode);
     if (foundIndex !== -1) {
-        // Kosongkan pencarian jika ada agar baris terlihat, lalu buka popup qty
         document.getElementById('inputCariItem').value = "";
         renderTabel979(dataMenu979);
         bukaPopupQty(foundIndex);
@@ -268,9 +319,8 @@ function cariDanBukaItemDariBarcode(scannedBarcode) {
     }
 }
 
-// 3. FITUR RESET DATA
 function konfirmasiResetData() {
-    let konfirmasi = confirm("PERINGATAN: Apakah Anda yakin ingin mereset semua data Qty fisik dan stok sistem yang tersimpan? Tindakan ini tidak dapat dibatalkan.");
+    let konfirmasi = confirm("PERINGATAN: Apakah Anda yakin ingin mereset semua data Qty fisik dan stok sistem yang tersimpan?");
     if (konfirmasi) {
         localStorage.removeItem(STORAGE_KEY_979);
         dataMenu979.forEach(item => {
