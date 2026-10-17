@@ -42,10 +42,15 @@ window.onload = function() {
         if (loginCard) loginCard.classList.add('hidden');
         if (sessionModal) sessionModal.classList.add('hidden');
 
-        if (isPageRefreshed && activeMenu === '979' && typeof loadMenu979 === 'function') {
+        if (isPageRefreshed && activeMenu) {
             if (mainMenuCard) mainMenuCard.classList.add('hidden');
             if (workspaceCard) workspaceCard.classList.remove('hidden');
-            loadMenu979();
+            
+            if (activeMenu === '979' && typeof loadMenu979 === 'function') {
+                loadMenu979();
+            } else if (activeMenu === 'bebas' && typeof loadMenuRakBebas === 'function') {
+                loadMenuRakBebas();
+            }
         } else {
             localStorage.removeItem('apo_active_menu');
             if (workspaceCard) workspaceCard.classList.add('hidden');
@@ -260,8 +265,9 @@ function pilihMenu(jenis) {
         setupWorkspaceHeader("SO Reguler / Partial", "Mode input reguler");
         bukaAreaSO();
     } else if (jenis === 'bebas') {
-        setupWorkspaceHeader("Rak Bebas / Customize", "Mode input bebas");
-        bukaAreaSO();
+        if (typeof loadMenuRakBebas === 'function') {
+            loadMenuRakBebas();
+        }
     } else if (jenis === 'admin') {
         let passwordAdmin = prompt("Masukkan PIN/Sandi khusus Admin:");
         if (passwordAdmin === "admin123") {
@@ -328,18 +334,24 @@ function bukaAreaSO() {
     let soArea = document.getElementById('soFormArea');
     let adminArea = document.getElementById('adminFormArea');
     let menu979Container = document.getElementById('menu979Container');
+    let menuBebasContainer = document.getElementById('menuBebasContainer');
+    
     if (soArea) soArea.classList.remove('hidden');
     if (adminArea) adminArea.classList.add('hidden');
     if (menu979Container) menu979Container.classList.add('hidden');
+    if (menuBebasContainer) menuBebasContainer.classList.add('hidden');
 }
 
 function bukaAreaAdmin() {
     let soArea = document.getElementById('soFormArea');
     let adminArea = document.getElementById('adminFormArea');
     let menu979Container = document.getElementById('menu979Container');
+    let menuBebasContainer = document.getElementById('menuBebasContainer');
+    
     if (soArea) soArea.classList.add('hidden');
     if (adminArea) adminArea.classList.remove('hidden');
     if (menu979Container) menu979Container.classList.add('hidden');
+    if (menuBebasContainer) menuBebasContainer.classList.add('hidden');
 }
 
 function kembaliKeMenu() {
