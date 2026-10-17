@@ -1,10 +1,10 @@
 const CSV_URL = "https://docs.google.com/spreadsheets/d/15Albul63206zfgQ8vaa0krgcoryLURf2xEGv3K-UueI/export?format=csv";
 
 let dataMenu979 = [];
+const STORAGE_KEY_979 = "apo_data_menu_979";
 
 async function loadMenu979() {
     let container = document.getElementById('workspaceCard');
-    // Membuat card workspace menjadi full width/screen khusus menu 979
     container.style.maxWidth = "100%";
     container.style.margin = "0";
     container.style.borderRadius = "0";
@@ -12,7 +12,7 @@ async function loadMenu979() {
 
     container.innerHTML = `
         <h3 style="font-size: 18px; margin-bottom: 5px;">Menu Rak 979 (Stock Opname)</h3>
-        <p id="statusLoad979" style="text-align: center; color: var(--text-muted); font-size: 12px; margin-bottom: 15px;">Sedang memuat data master dari Spreadsheet...</p>
+        <p id="statusLoad979" style="text-align: center; color: var(--text-muted); font-size: 12px; margin-bottom: 15px;">Memuat data master...</p>
         
         <div class="table-full-container">
             <table id="tabelMenu979">
@@ -49,7 +49,7 @@ async function loadMenu979() {
 
 function parseCSVData(text) {
     let lines = text.split("\n");
-    dataMenu979 = [];
+    let masterItems = [];
 
     for (let i = 1; i < lines.length; i++) {
         let line = lines[i].trim();
@@ -61,8 +61,8 @@ function parseCSVData(text) {
         let namaItem = row[2] ? row[2].replace(/"/g, '').trim() : "";
 
         if (plu || namaItem) {
-            dataMenu979.push({
-                no: dataMenu979.length + 1,
+            masterItems.push({
+                no: masterItems.length + 1,
                 plu: plu,
                 barcode: barcode,
                 namaItem: namaItem,
@@ -73,10 +73,34 @@ function parseCSVData(text) {
         }
     }
 
+    // Cek apakah ada data Qty tersimpan sebelumnya di localStorage
+    let savedLocalData = localStorage.getItem(STORAGE_KEY_979);
+    if (savedLocalData) {
+        try {
+            let parsedLocal = JSON.parse(savedLocalData);
+            // Gabungkan nilai Qty & OH yang sudah pernah dihitung sebelumnya berdasarkan PLU/Barcode
+            masterItems.forEach(master => {
+                let found = parsedLocal.find(p => p.plu === master.plu);
+                if (found) {
+                    master.qty = found.qty || 0;
+                    master.oh = found.oh || 0;
+                    master.selisih = master.qty - master.oh;
+                }
+            });
+        } catch (e) {
+            console.error("Gagal memuat data tersimpan:", e);
+        }
+    }
+
+    dataMenu979 = masterItems;
     renderTabel979();
-    document.getElementById('statusLoad979').innerText = `Total ${dataMenu979.length} item dimuat. Menyinkronkan stok server...`;
     
-    sinkronisasiStokServer();
+    if (savedLocalData) {
+        document.getElementById('statusLoad979').innerText = `Memuat ${dataMenu979.length} item dari memori tersimpan (Auto-saved).`;
+    } else {
+        document.getElementById('statusLoad979').innerText = `Total ${dataMenu979.length} item dimuat. Menyinkronkan stok server...`;
+        sinkronisasiStokServer();
+    }
 }
 
 function renderTabel979() {
@@ -85,6 +109,7 @@ function renderTabel979() {
 
     dataMenu979.forEach((item, index) => {
         let tr = document.createElement('tr');
+        let selisihWarna = item.selisih !== 0 ? "color: #ef4444;" : "";
         tr.innerHTML = `
             <td style="text-align: center; font-size: 12px;">${item.no}</td>
             <td style="font-size: 12px;"><b>${item.plu}</b><br><small style="color: var(--text-muted);">${item.barcode}</small></td>
@@ -97,13 +122,12 @@ function renderTabel979() {
                 </div>
             </td>
             <td style="text-align: center; font-size: 13px;" id="oh-val-${index}">${item.oh}</td>
-            <td style="text-align: center; font-size: 13px; font-weight: bold;" id="selisih-val-${index}">${item.selisih}</td>
+            <td style="text-align: center; font-size: 13px; font-weight: bold; ${selisihWarna}" id="selisih-val-${index}">${item.selisih}</td>
         `;
         tbody.appendChild(tr);
     });
 }
 
-// Tombol +/- untuk penyesuaian cepat
 function ubahQty(index, delta) {
     let inputEl = document.getElementById(`qty-input-${index}`);
     let val = parseInt(inputEl.value) || 0;
@@ -114,7 +138,6 @@ function ubahQty(index, delta) {
     updateQtyManual(index, val);
 }
 
-// Update Qty saat diketik manual atau diubah lewat tombol
 function updateQtyManual(index, value) {
     let val = parseInt(value) || 0;
     if (val < 0) val = 0;
@@ -130,6 +153,9 @@ function updateQtyManual(index, value) {
     } else {
         selisihEl.style.color = "inherit";
     }
+
+    // Simpan otomatis ke localStorage setiap kali ada perubahan Qty
+    localStorage.setItem(STORAGE_KEY_979, JSON.stringify(dataMenu979));
 }
 
 async function sinkronisasiStokServer() {
@@ -137,7 +163,7 @@ async function sinkronisasiStokServer() {
     let isSkipped = localStorage.getItem('apo_skipped') === 'true';
 
     if (!savedToken || isSkipped) {
-        document.getElementById('statusLoad979').innerText = `Total ${dataMenu979.length} item dimuat. (Mode Tamu / OH = 0)`;
+        document.getElementById('statusLoad979').innerText = `Total ${dataMenu979.length} item dimuat. (Mode Tanpa Login / OH = 0)`;
         return;
     }
 
@@ -175,7 +201,9 @@ async function sinkronisasiStokServer() {
         }
     }
 
-    document.getElementById('statusLoad979').innerText = `Sinkronisasi selesai. Berhasil memperbarui stok ${successCount} item.`;
+    // Simpan pembaruan OH server ke localStorage
+    localStorage.setItem(STORAGE_KEY_979, JSON.stringify(dataMenu979));
+    document.getElementById('statusLoad979').innerText = `Sinkronisasi selesai. Stok ${successCount} item diperbarui.`;
 }
 
 let hanyaSelisih = false;
