@@ -93,9 +93,9 @@ async function loadMenu979() {
 
                 <div class="modern-input-box-area">
                     <div class="modern-current-label">
-                        Qty Tersimpan Saat Ini: <span id="modalCurrentQty">0</span>
+                        Qty Tersimpan: <span id="modalCurrentQty">0</span>
                     </div>
-                    <label class="modern-input-label">Atur Qty Fisik (Timpa / Ubah):</label>
+                    <label class="modern-input-label">Tambah Qty (Tempat Lain):</label>
                     
                     <div class="modern-stepper-row">
                         <button onclick="ubahNilaiInputPopup(-1)" class="modern-step-btn">-</button>
@@ -106,7 +106,7 @@ async function loadMenu979() {
 
                 <div class="modern-btn-row" style="margin-bottom: 8px;">
                     <button onclick="tutupPopupQty()" class="modern-btn-batal">Batal</button>
-                    <button onclick="simpanQtyAktual979()" class="modern-btn-simpan">Simpan</button>
+                    <button onclick="simpanQtyTambah()" class="modern-btn-simpan">Simpan</button>
                 </div>
                 <button onclick="resetQtyItem979()" style="width: 100%; background: #dc2626; color: white; border: none; border-radius: 8px; padding: 8px; font-weight: bold; font-size: 12px; cursor: pointer;">🔄 Reset Qty Item Ini ke 0</button>
             </div>
@@ -193,7 +193,7 @@ function renderTabel979(listData) {
             <td style="font-size: 12px;"><b>${item.plu}</b><br><small style="color: var(--text-muted);">${item.barcode}</small></td>
             <td style="font-size: 12px;">${item.namaItem}</td>
             <td style="text-align: center;">
-                <div onclick="bukaPopupQty(${realIndex})" class="qty-pill-box" title="Klik untuk edit qty">
+                <div onclick="bukaPopupQty(${realIndex})" class="qty-pill-box" title="Klik untuk tambah/hitung ulang">
                     <span id="qty-text-${realIndex}" style="font-weight: bold; font-size: 14px; color: #38bdf8;">${item.qty}</span>
                     <small style="font-size: 9px; display: block; color: var(--text-muted);">ketuk edit</small>
                 </div>
@@ -380,7 +380,7 @@ function bukaPopupQty(index) {
     document.getElementById('modalPluText').innerText = item.plu;
     document.getElementById('modalBarcodeText').innerText = item.barcode;
     document.getElementById('modalCurrentQty').innerText = item.qty;
-    document.getElementById('modalInputTambah').value = item.qty;
+    document.getElementById('modalInputTambah').value = "0";
 
     document.getElementById('popupQtyModal').classList.remove('hidden');
     document.getElementById('modalInputTambah').focus();
@@ -400,15 +400,15 @@ function ubahNilaiInputPopup(delta) {
     inputEl.value = val;
 }
 
-function simpanQtyAktual979() {
+function simpanQtyTambah() {
     if (currentIndexAktif === null) return;
 
-    let inputVal = parseInt(document.getElementById('modalInputTambah').value);
-    if (isNaN(inputVal)) inputVal = 0;
-    
+    let inputTambah = parseInt(document.getElementById('modalInputTambah').value) || 0;
     let item = dataMenu979[currentIndexAktif];
 
-    item.qty = inputVal >= 0 ? inputVal : 0;
+    item.qty += inputTambah; // Menambah Qty ke nilai sebelumnya
+    if (item.qty < 0) item.qty = 0;
+
     item.selisih = item.qty - item.oh;
 
     let qtySpan = document.getElementById(`qty-text-${currentIndexAktif}`);
