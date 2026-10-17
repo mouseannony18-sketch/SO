@@ -14,7 +14,7 @@ async function loadMenu979() {
     container.style.minHeight = "100vh";
 
     container.innerHTML = `
-        <!-- HEADER ELEGAN (JUDUL, TOGGLE TEMA, & MENU PENGATURAN KOTAK) -->
+        <!-- HEADER ELEGAN KHUSUS MENU 979 -->
         <div class="so-header-bar">
             <div class="so-header-title-wrapper">
                 <h3 class="so-header-title">Rak 979 (Stock Opname)</h3>
@@ -22,9 +22,6 @@ async function loadMenu979() {
             </div>
             
             <div class="so-header-actions">
-                <!-- Toggle Tema Gelap / Terang -->
-                <button onclick="toggleTheme()" class="theme-toggle-btn header-icon-btn" title="Ganti Tema">🌙</button>
-                
                 <!-- Kotak Pengaturan Menu (Dropdown) -->
                 <div class="dropdown-container">
                     <button onclick="toggleDropdownMenu()" class="settings-box-btn header-icon-btn" title="Menu Pengaturan">⚙️</button>
@@ -39,23 +36,23 @@ async function loadMenu979() {
             </div>
         </div>
 
-        <!-- BARIS 1 ATAS: TOMBOL RESET & CEK SELISIH -->
+        <!-- BARIS 1: TOMBOL RESET & CEK SELISIH -->
         <div class="top-action-bar-row1">
             <button onclick="konfirmasiResetData()" class="action-top-btn reset-btn" title="Reset Semua Data Qty">🗑️ Reset Data</button>
             <button onclick="filterSelisihToggle()" id="btnCekSelisih" class="action-top-btn selisih-btn">📊 Cek Selisih</button>
         </div>
 
-        <!-- BARIS 2 BAWAH: KOLOM PENCARIAN & TOMBOL SCAN -->
+        <!-- BARIS 2: PENCARIAN 75% & TOMBOL SCAN 20% -->
         <div class="top-action-bar-row2">
             <div class="search-box-wrapper">
                 <span class="search-icon">🔍</span>
                 <input type="text" id="inputCariItem" oninput="handlePencarianInput(this.value)" placeholder="Cari PLU, Barcode, Nama..." class="modern-search-input" />
                 <button id="btnClearSearch" onclick="bersihkanPencarian()" class="clear-search-btn hidden">×</button>
             </div>
-            <button onclick="bukaScannerKamera()" class="action-top-btn scan-btn">📷 Scan</button>
+            <button onclick="bukaScannerKamera()" class="scan-btn">📷 Scan</button>
         </div>
 
-        <!-- AREA SCANNER KAMERA -->
+        <!-- AREA SCANNER KAMERA (NORMAL/UTAMA) -->
         <div id="scannerContainer" class="scanner-box hidden">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                 <b style="font-size: 12px; color: #38bdf8;">Arahkan Kamera ke Barcode</b>
@@ -85,7 +82,6 @@ async function loadMenu979() {
         </div>
     `;
 
-    // Tutup dropdown jika pengguna mengklik di luar area dropdown
     window.onclick = function(event) {
         if (!event.target.matches('.settings-box-btn') && !event.target.closest('.settings-box-btn')) {
             let dropdown = document.getElementById('settingsDropdownMenu');
@@ -194,7 +190,7 @@ function parseCSVData(text) {
                 }
             });
         } catch (e) {
-            console.error("Gagal memuat data tersimpan:", e);
+            console.error(e);
         }
     }
 
