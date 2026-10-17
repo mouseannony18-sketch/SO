@@ -6,7 +6,6 @@
     <title>Stock Opname Mobile</title>
     <!-- SheetJS via CDN untuk export Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- Menghubungkan file CSS terpisah -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -27,20 +26,61 @@
         <p id="statusLogin"></p>
     </div>
 
-    <!-- KARTU MENU UTAMA (4 MENU) -->
-    <div class="card hidden" id="mainMenuCard">
-        <h3>Menu Utama Stock Opname</h3>
-        <p class="status-active">Sesi Aktif (NIK: <span id="userNikText"></span>)</p>
-        
-        <button class="menu-btn" onclick="pilihMenu('979')">1. Menu 979</button>
-        <button class="menu-btn" onclick="pilihMenu('partial')">2. Partial / Reguler</button>
-        <button class="menu-btn" onclick="pilihMenu('bebas')">3. Rak Bebas / Customize</button>
-        <button class="menu-btn admin-menu" onclick="pilihMenu('admin')">4. Tambah Item Inventory (Admin)</button>
+    <!-- KARTU UTAMA APLIKASI (DENGAN HEADER & MENU GRID) -->
+    <div class="app-container hidden" id="mainMenuCard">
+        <!-- Header Atas -->
+        <div class="app-header">
+            <div class="header-title">
+                <span class="logo-icon">🐝</span>
+                <span class="app-title-text">Stock Opname</span>
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn" title="Sesi Aktif">⏳</button>
+                <button class="icon-btn" title="Mode Gelap">🌙</button>
+                <button class="logout-top-btn" onclick="logout()">Keluar</button>
+            </div>
+        </div>
 
-        <button onclick="logout()" class="logout-btn">Keluar / Reset Sesi</button>
+        <!-- Banner Selamat Datang -->
+        <div class="welcome-banner">
+            <h2>👑 Selamat Datang!</h2>
+            <p>Semoga stockopname kamu maksimal 💪</p>
+            <p class="nik-info">NIK Aktif: <span id="userNikText"></span></p>
+        </div>
+
+        <!-- Grid Menu Kotak Berikon -->
+        <div class="menu-grid">
+            <div class="menu-item" onclick="pilihMenu('979')">
+                <div class="menu-icon-box bg-white">
+                    <span class="menu-text-badge red">979</span>
+                </div>
+                <span class="menu-label">RAK 979</span>
+            </div>
+
+            <div class="menu-item" onclick="pilihMenu('bebas')">
+                <div class="menu-icon-box bg-white">
+                    <span class="menu-text-badge blue">FREE</span>
+                </div>
+                <span class="menu-label">Rak Bebas</span>
+            </div>
+
+            <div class="menu-item" onclick="pilihMenu('partial')">
+                <div class="menu-icon-box bg-red">
+                    <span class="menu-icon-symbol">📊</span>
+                </div>
+                <span class="menu-label">SO Reguler</span>
+            </div>
+
+            <div class="menu-item" onclick="pilihMenu('admin')">
+                <div class="menu-icon-box bg-blue">
+                    <span class="menu-icon-symbol">➕</span>
+                </div>
+                <span class="menu-label">+Item</span>
+            </div>
+        </div>
     </div>
 
-    <!-- KARTU FORM / WORKSPACE MASING-MASING MENU -->
+    <!-- KARTU WORKSPACE (HALAMAN PENGISIAN SO & ADMIN) -->
     <div class="card hidden" id="workspaceCard">
         <h3 id="judulMenuAktif">Workspace</h3>
         
@@ -84,7 +124,6 @@
         <button onclick="kembaliKeMenu()" class="back-btn">Kembali ke Menu Utama</button>
     </div>
 
-    <!-- Menghubungkan file JavaScript terpisah -->
     <script src="script.js"></script>
 </body>
 </html>
