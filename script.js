@@ -18,9 +18,6 @@ window.onload = function() {
     let savedStore = localStorage.getItem('apo_store');
     let isSkipped = localStorage.getItem('apo_skipped') === 'true';
 
-    // Cek apakah sebelumnya pengguna sedang membuka menu tertentu sebelum direload
-    let activeMenu = localStorage.getItem('apo_active_menu');
-
     if ((savedToken && savedNik) || isSkipped) {
         tokenGlobal = savedToken || "";
         currentNik = savedNik || "Tamu";
@@ -34,21 +31,33 @@ window.onload = function() {
         document.getElementById('loginCard').classList.add('hidden');
         document.getElementById('sessionModal').classList.add('hidden');
 
-        // Jika sebelumnya sedang di Menu 979, langsung muat kembali Menu 979 secara otomatis
-        if (activeMenu === '979' && typeof loadMenu979 === 'function') {
+        // PERBAIKAN: Cek apakah halaman ini murni direload (bukan dibuka dari URL baru/luar).
+        // Kita bisa menggunakan sessionstorage atau memeriksa apakah halaman sebelumnya memang aktif.
+        // Cara paling aman: Hapus apo_active_menu saat halaman pertama kali ditutup/pindah, 
+        // atau gunakan sessionStorage untuk mendeteksi refresh vs buka tab baru.
+        let isPageRefreshed = sessionStorage.getItem('apo_is_refreshed');
+        let activeMenu = localStorage.getItem('apo_active_menu');
+
+        if (isPageRefreshed && activeMenu === '979' && typeof loadMenu979 === 'function') {
             document.getElementById('mainMenuCard').classList.add('hidden');
             document.getElementById('workspaceCard').classList.remove('hidden');
             loadMenu979();
         } else {
+            // Jika ini kunjungan dari URL baru, bersihkan memori menu aktif dan arahkan ke Menu Utama
+            localStorage.removeItem('apo_active_menu');
             document.getElementById('workspaceCard').classList.add('hidden');
             document.getElementById('mainMenuCard').classList.remove('hidden');
         }
+
+        // Tandai bahwa sesi halaman ini sedang aktif berjalan
+        sessionStorage.setItem('apo_is_refreshed', 'true');
     } else {
         isSessionValid = false;
         updateAuthButtonState(false);
         showLoginScreen();
     }
 };
+
 
 function toggleTheme() {
     if (document.body.classList.contains('dark-mode')) {
