@@ -6,6 +6,62 @@ let currentIndexAktif = null;
 let html5QrCode = null;
 let isFlashOn = false;
 
+// HELPER MODAL ALERT & CONFIRM MODERN
+function showModernAlert(message, title = "Informasi") {
+    return new Promise((resolve) => {
+        let existingModal = document.getElementById('modernGlobalAlertModal');
+        if (existingModal) existingModal.remove();
+
+        let modalDiv = document.createElement('div');
+        modalDiv.id = 'modernGlobalAlertModal';
+        modalDiv.className = 'modern-modal-overlay';
+        modalDiv.innerHTML = `
+            <div class="modern-modal-card" style="text-align: center;">
+                <div style="font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--text-color);">${title}</div>
+                <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.4;">${message}</div>
+                <button id="alertOkBtn" style="width: 100%; background: #2563eb; color: white; border: none; border-radius: 8px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer;">OK</button>
+            </div>
+        `;
+        document.body.appendChild(modalDiv);
+
+        document.getElementById('alertOkBtn').onclick = function() {
+            modalDiv.remove();
+            resolve(true);
+        };
+    });
+}
+
+function showModernConfirm(message, title = "Konfirmasi") {
+    return new Promise((resolve) => {
+        let existingModal = document.getElementById('modernGlobalConfirmModal');
+        if (existingModal) existingModal.remove();
+
+        let modalDiv = document.createElement('div');
+        modalDiv.id = 'modernGlobalConfirmModal';
+        modalDiv.className = 'modern-modal-overlay';
+        modalDiv.innerHTML = `
+            <div class="modern-modal-card" style="text-align: center;">
+                <div style="font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--text-color);">${title}</div>
+                <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.4;">${message}</div>
+                <div style="display: flex; gap: 8px;">
+                    <button id="confirmBatalBtn" style="flex: 1; background: #4b5563; color: white; border: none; border-radius: 8px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer;">Batal</button>
+                    <button id="confirmYaBtn" style="flex: 1; background: #dc2626; color: white; border: none; border-radius: 8px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer;">Ya, Lanjutkan</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modalDiv);
+
+        document.getElementById('confirmBatalBtn').onclick = function() {
+            modalDiv.remove();
+            resolve(false);
+        };
+        document.getElementById('confirmYaBtn').onclick = function() {
+            modalDiv.remove();
+            resolve(true);
+        };
+    });
+}
+
 async function loadMenu979() {
     setupWorkspaceHeader("Rak 979 (Stock Opname)", "Memuat data...", true);
 
@@ -297,8 +353,8 @@ async function bukaScannerKamera() {
                 cariDanBukaItemDariBarcode(decodedText.trim());
             },
             (errorMessage) => {}
-        ).catch(fallbackErr => {
-            alert("Gagal mengaktifkan kamera: " + fallbackErr);
+        ).catch(async fallbackErr => {
+            await showModernAlert("Gagal mengaktifkan kamera: " + fallbackErr, "Error Kamera");
             scannerBox.classList.add('hidden');
         });
     }
@@ -312,9 +368,9 @@ function toggleFlashLight() {
         advanced: [{ torch: isFlashOn }]
     }).then(() => {
         updateFlashButtonUI();
-    }).catch(err => {
+    }).catch(async err => {
         isFlashOn = !isFlashOn;
-        alert("Fitur Flash (Senter) tidak didukung pada perangkat ini.");
+        await showModernAlert("Fitur Flash (Senter) tidak didukung pada perangkat ini.", "Informasi");
     });
 }
 
@@ -353,13 +409,13 @@ function cariDanBukaItemDariBarcode(scannedBarcode) {
         bersihkanPencarian();
         bukaPopupQty(foundIndex);
     } else {
-        alert(`Barcode [${scannedBarcode}] tidak ditemukan di dalam Master Rak 979.`);
+        showModernAlert(`Barcode [${scannedBarcode}] tidak ditemukan di dalam Master Rak 979.`, "Item Tidak Ditemukan");
     }
 }
 
-function konfirmasiResetData() {
-    let konfirmasi = confirm("PERINGATAN: Apakah Anda yakin ingin mereset semua data Qty fisik?");
-    if (konfirmasi) {
+async function konfirmasiResetData() {
+    let isConfirmed = await showModernConfirm("PERINGATAN: Apakah Anda yakin ingin mereset semua data Qty fisik?", "Reset Seluruh Rak");
+    if (isConfirmed) {
         localStorage.removeItem(STORAGE_KEY_979);
         dataMenu979.forEach(item => {
             item.qty = 0;
@@ -368,7 +424,7 @@ function konfirmasiResetData() {
         });
         renderTabel979(dataMenu979);
         setupWorkspaceHeader("Rak 979 (Stock Opname)", "Data direset.", true);
-        alert("Semua data Qty berhasil direset!");
+        await showModernAlert("Semua data Qty berhasil direset!", "Sukses");
     }
 }
 
@@ -406,7 +462,7 @@ function simpanQtyTambah() {
     let inputTambah = parseInt(document.getElementById('modalInputTambah').value) || 0;
     let item = dataMenu979[currentIndexAktif];
 
-    item.qty += inputTambah; // Menambah Qty ke nilai sebelumnya
+    item.qty += inputTambah;
     if (item.qty < 0) item.qty = 0;
 
     item.selisih = item.qty - item.oh;
@@ -430,9 +486,10 @@ function simpanQtyTambah() {
     tutupPopupQty();
 }
 
-function resetQtyItem979() {
+async function resetQtyItem979() {
     if (currentIndexAktif === null) return;
-    if (confirm("Reset Qty item ini menjadi 0?")) {
+    let isConfirmed = await showModernConfirm("Reset Qty item ini menjadi 0?", "Konfirmasi Reset");
+    if (isConfirmed) {
         let item = dataMenu979[currentIndexAktif];
         item.qty = 0;
         item.selisih = item.qty - item.oh;
@@ -458,7 +515,7 @@ async function sinkronisasiStokServer979(isManual = false) {
     let isSkipped = localStorage.getItem('apo_skipped') === 'true';
 
     if (!savedToken || isSkipped) {
-        if (isManual) alert("Mode Tamu / Belum Login: Tidak dapat melakukan sinkronisasi server.");
+        if (isManual) await showModernAlert("Mode Tamu / Belum Login: Tidak dapat melakukan sinkronisasi server.", "Perhatian");
         setupWorkspaceHeader("Rak 979 (Stock Opname)", "Mode Tamu (OH = 0)", true);
         return;
     }
@@ -504,7 +561,7 @@ async function sinkronisasiStokServer979(isManual = false) {
 
     localStorage.setItem(STORAGE_KEY_979, JSON.stringify(dataMenu979));
     setupWorkspaceHeader("Rak 979 (Stock Opname)", `${successCount} item tersinkron`, true);
-    if (isManual) alert(`Sinkronisasi Rak 979 Berhasil! Stok ${successCount} item diperbarui.`);
+    if (isManual) await showModernAlert(`Sinkronisasi Rak 979 Berhasil! Stok ${successCount} item diperbarui.`, "Sukses");
 }
 
 let statusFilterSelisih = false;
