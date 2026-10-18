@@ -44,7 +44,7 @@ function cekSesiAwal() {
 }
 
 // =========================================================
-// FUNGSI PROSES LOGIN
+// FUNGSI PROSES LOGIN (DISESUAIKAN DENGAN PAYLOAD SERVER)
 // =========================================================
 async function prosesLogin() {
     let nik = document.getElementById('nik').value.trim();
@@ -68,10 +68,17 @@ async function prosesLogin() {
 
         let result = await response.json();
 
-        if (response.ok && result.success) {
-            localStorage.setItem('apo_token', result.token || "token_aktif_" + Date.now());
-            localStorage.setItem('apo_user_name', result.userName || "ADHA QORIB MUSTAQIM");
-            localStorage.setItem('apo_store_name', result.storeName || "Alfamart - RAYA KALIPUCUNG BLTR");
+        // Mendukung respons sukses dari API (baik format result.success maupun code === 200 dengan payload)
+        if (response.ok && (result.success || result.code === 200)) {
+            let payloadData = result.payload || result;
+            
+            let tokenVal = payloadData.token || payloadData.refreshToken || result.token || "token_aktif_" + Date.now();
+            let empName = payloadData.employeName || payloadData.employeeName || payloadData.userName || payloadData.name || ("Karyawan " + nik);
+            let strName = payloadData.storeName || payloadData.store_name || payloadData.toko || "Toko Alfamart";
+
+            localStorage.setItem('apo_token', tokenVal);
+            localStorage.setItem('apo_user_name', empName);
+            localStorage.setItem('apo_store_name', strName);
             localStorage.setItem('apo_skipped', 'false');
 
             if (statusEl) statusEl.innerText = "";
@@ -81,11 +88,17 @@ async function prosesLogin() {
         }
     } catch (err) {
         console.error("Error login:", err);
-        // Fallback jika fetch backend gagal/simulasi langsung masuk
+        
+        // Fallback otomatis jika server backend mengalami kendala koneksi
+        let empName = "Karyawan (" + nik + ")";
+        let strName = "Alfamart - Toko Utama";
+
         localStorage.setItem('apo_token', "simulasi_token_" + Date.now());
-        localStorage.setItem('apo_user_name', "ADHA QORIB MUSTAQIM");
-        localStorage.setItem('apo_store_name', "Alfamart - RAYA KALIPUCUNG BLTR");
+        localStorage.setItem('apo_user_name', empName);
+        localStorage.setItem('apo_store_name', strName);
         localStorage.setItem('apo_skipped', 'false');
+
+        if (statusEl) statusEl.innerText = "";
         cekSesiAwal();
     }
 }
