@@ -2,7 +2,6 @@
 // SCRIPT UTAMA APLIKASI STOCK OPNAME (script.js)
 // =========================================================
 
-// Jalankan pengecekan sesi saat halaman pertama kali dimuat
 document.addEventListener("DOMContentLoaded", function () {
     cekSesiAwal();
 });
@@ -17,7 +16,6 @@ function cekSesiAwal() {
     let mainMenuCard = document.getElementById('mainMenuCard');
     let workspaceCard = document.getElementById('workspaceCard');
 
-    // Jika token aktif atau mode tamu (skipped) dipilih
     if ((savedToken && savedToken !== "") || isSkipped) {
         if (loginCard) loginCard.classList.add('hidden');
         if (mainMenuCard) mainMenuCard.classList.remove('hidden');
@@ -39,7 +37,6 @@ function cekSesiAwal() {
             authBtn.className = "auth-action-btn logout-color";
         }
     } else {
-        // Jika belum login atau sesi habis
         if (loginCard) loginCard.classList.remove('hidden');
         if (mainMenuCard) mainMenuCard.classList.add('hidden');
         if (workspaceCard) workspaceCard.classList.add('hidden');
@@ -106,6 +103,7 @@ function tutupGlobalBarcodeModal() {
 // NAVIGASI & AUTENTIKASI
 // =========================================================
 function pilihMenu(menuType) {
+    tutupDropdownOtomatis();
     let mainMenuCard = document.getElementById('mainMenuCard');
     let workspaceCard = document.getElementById('workspaceCard');
 
@@ -128,6 +126,7 @@ function pilihMenu(menuType) {
 }
 
 function kembaliKeMenu() {
+    tutupDropdownOtomatis();
     let workspaceCard = document.getElementById('workspaceCard');
     let mainMenuCard = document.getElementById('mainMenuCard');
     let menu979Container = document.getElementById('menu979Container');
@@ -141,6 +140,11 @@ function kembaliKeMenu() {
     if (menuBebasContainer) menuBebasContainer.classList.add('hidden');
     if (soFormArea) soFormArea.classList.add('hidden');
     if (adminFormArea) adminFormArea.classList.add('hidden');
+}
+
+function tutupDropdownOtomatis() {
+    let dropdown = document.getElementById('globalSettingsDropdown');
+    if (dropdown) dropdown.classList.add('hidden');
 }
 
 function setupWorkspaceHeader(title, subtitle, showExtra = true, extraHTML = "") {
@@ -162,13 +166,13 @@ function setupWorkspaceHeader(title, subtitle, showExtra = true, extraHTML = "")
 }
 
 function handleAuthAction() {
+    tutupDropdownOtomatis();
     let savedToken = localStorage.getItem('apo_token');
     let isSkipped = localStorage.getItem('apo_skipped') === 'true';
 
     if (savedToken || isSkipped) {
         logout();
     } else {
-        // Tampilkan kartu login
         let loginCard = document.getElementById('loginCard');
         let mainMenuCard = document.getElementById('mainMenuCard');
         if (loginCard) loginCard.classList.remove('hidden');
@@ -183,6 +187,7 @@ function lewatiLogin() {
 }
 
 function logout() {
+    tutupDropdownOtomatis();
     localStorage.removeItem('apo_token');
     localStorage.removeItem('apo_skipped');
     localStorage.removeItem('apo_user_name');
