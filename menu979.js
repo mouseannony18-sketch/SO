@@ -529,6 +529,8 @@ async function sinkronisasiStokServer979(isManual = false) {
     setupWorkspaceHeader("Rak 979 (Stock Opname)", "Sync server...", true);
 
     let successCount = 0;
+    let isSessionExpired = false;
+
     for (let i = 0; i < dataMenu979.length; i++) {
         let item = dataMenu979[i];
         if (!item.barcode || item.barcode === "-") continue;
@@ -541,6 +543,13 @@ async function sinkronisasiStokServer979(isManual = false) {
             });
 
             let result = await response.json();
+
+            // DETEKSI SESI KADALUWARSA / TOKEN DITOLAK SERVER
+            if (response.status === 401 || response.status === 403 || (result && result.success === false && (result.message?.includes('token') || result.message?.includes('sesi') || result.message?.includes('login') || result.message?.includes('auth')))) {
+                isSessionExpired = true;
+                break;
+            }
+
             if (response.ok && result.success) {
                 item.oh = parseInt(result.systemStock) || 0;
                 item.selisih = item.qty - item.oh;
@@ -563,6 +572,31 @@ async function sinkronisasiStokServer979(isManual = false) {
         } catch (e) {
             console.error(e);
         }
+    }
+
+    // JIKA SESI HABIS
+    if (isSessionExpired) {
+        localStorage.removeItem('apo_token');
+        localStorage.removeItem('apo_user_name');
+        localStorage.removeItem('apo_store_name');
+        
+        // Reset tampilan Header Global
+        let nameEl = document.getElementById('userNameText');
+        let storeEl = document.getElementById('storeNameText');
+        let authBtn = document.getElementById('authBtn');
+        if (nameEl) nameEl.innerText = "Karyawan Alfamart";
+        if (storeEl) storeEl.innerText = "Toko Alfamart";
+        if (authBtn) {
+            authBtn.innerText = "Login";
+            authBtn.className = "auth-action-btn login-color";
+        }
+
+        // Tampilkan Modal Sesi Berakhir
+        let sessionModal = document.getElementById('sessionModal');
+        if (sessionModal) sessionModal.classList.remove('hidden');
+
+        setupWorkspaceHeader("Rak 979 (Stock Opname)", "Sesi Berakhir (Harap Login)", false);
+        return;
     }
 
     localStorage.setItem(STORAGE_KEY_979, JSON.stringify(dataMenu979));
