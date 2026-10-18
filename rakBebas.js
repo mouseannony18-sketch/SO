@@ -10,7 +10,7 @@ let isFlashOnBebas = false;
 let statusFilterSelisihBebas = false;
 
 async function loadMenuRakBebas() {
-    setupWorkspaceHeader("Rak Bebas / Customize", "Memuat item bebas...", true);
+    setupWorkspaceHeader("Rak Bebas / Customize", "Memuat item bebas...", true, `<button onclick="sinkronisasiStokServerBebas(true)">🔄 Sync</button> <button onclick="exportExcelRakBebas()">📥 Download</button>`);
 
     let menu979Container = document.getElementById('menu979Container');
     if (menu979Container) menu979Container.classList.add('hidden');
@@ -141,7 +141,7 @@ function muatDataLokalRakBebas() {
         dataRakBebas = [];
     }
     renderTabelRakBebas(dataRakBebas);
-    setupWorkspaceHeader("Rak Bebas / Customize", `${dataRakBebas.length} item tersimpan`, true, `<button onclick="exportExcelRakBebas()">📥 Download / Cetak</button>`);
+    setupWorkspaceHeader("Rak Bebas / Customize", `${dataRakBebas.length} item tersimpan`, true, `<button onclick="sinkronisasiStokServerBebas(true)">🔄 Sync</button> <button onclick="exportExcelRakBebas()">📥 Download</button>`);
 }
 
 function renderTabelRakBebas(listData) {
@@ -255,7 +255,6 @@ async function tambahAtauCariItemRakBebas(code) {
         });
         let result = await response.json();
         
-        // Cek Sesi Habis
         if (response.status === 401 || response.status === 403 || (result && result.success === false && (result.message?.includes('token') || result.message?.includes('sesi') || result.message?.includes('login')))) {
             localStorage.removeItem('apo_token');
             localStorage.removeItem('apo_user_name');
@@ -310,7 +309,7 @@ async function sinkronisasiStokServerBebas(isManual = false) {
         return;
     }
 
-    setupWorkspaceHeader("Rak Bebas / Customize", "Sync server...", true);
+    setupWorkspaceHeader("Rak Bebas / Customize", "Sync server...", true, `<button onclick="sinkronisasiStokServerBebas(true)">🔄 Sync</button> <button onclick="exportExcelRakBebas()">📥 Download</button>`);
 
     let successCount = 0;
     let isSessionExpired = false;
@@ -328,7 +327,6 @@ async function sinkronisasiStokServerBebas(isManual = false) {
 
             let result = await response.json();
 
-            // DETEKSI SESI KADALUWARSA / TOKEN DITOLAK SERVER
             if (response.status === 401 || response.status === 403 || (result && result.success === false && (result.message?.includes('token') || result.message?.includes('sesi') || result.message?.includes('login') || result.message?.includes('auth')))) {
                 isSessionExpired = true;
                 break;
@@ -358,7 +356,6 @@ async function sinkronisasiStokServerBebas(isManual = false) {
         }
     }
 
-    // JIKA SESI HABIS
     if (isSessionExpired) {
         localStorage.removeItem('apo_token');
         localStorage.removeItem('apo_user_name');
@@ -382,7 +379,7 @@ async function sinkronisasiStokServerBebas(isManual = false) {
     }
 
     localStorage.setItem(STORAGE_KEY_BEBAS, JSON.stringify(dataRakBebas));
-    setupWorkspaceHeader("Rak Bebas / Customize", `${dataRakBebas.length} item tersimpan`, true, `<button onclick="exportExcelRakBebas()">📥 Download / Cetak</button>`);
+    setupWorkspaceHeader("Rak Bebas / Customize", `${dataRakBebas.length} item tersimpan`, true, `<button onclick="sinkronisasiStokServerBebas(true)">🔄 Sync</button> <button onclick="exportExcelRakBebas()">📥 Download</button>`);
     if (isManual) await showModernAlert(`Sinkronisasi Rak Bebas Berhasil! Stok ${successCount} item diperbarui.`, "Sukses");
 }
 
@@ -541,7 +538,7 @@ async function hapusItemDariPopup() {
         localStorage.setItem(STORAGE_KEY_BEBAS, JSON.stringify(dataRakBebas));
         renderTabelRakBebas(dataRakBebas);
         tutupPopupBebas();
-        setupWorkspaceHeader("Rak Bebas / Customize", `${dataRakBebas.length} item tersimpan`, true, `<button onclick="exportExcelRakBebas()">📥 Download / Cetak</button>`);
+        setupWorkspaceHeader("Rak Bebas / Customize", `${dataRakBebas.length} item tersimpan`, true, `<button onclick="sinkronisasiStokServerBebas(true)">🔄 Sync</button> <button onclick="exportExcelRakBebas()">📥 Download</button>`);
     }
 }
 
@@ -551,7 +548,7 @@ async function konfirmasiResetRakBebas() {
         localStorage.removeItem(STORAGE_KEY_BEBAS);
         dataRakBebas = [];
         renderTabelRakBebas(dataRakBebas);
-        setupWorkspaceHeader("Rak Bebas / Customize", "Data direset", true, `<button onclick="exportExcelRakBebas()">📥 Download / Cetak</button>`);
+        setupWorkspaceHeader("Rak Bebas / Customize", "Data direset", true, `<button onclick="sinkronisasiStokServerBebas(true)">🔄 Sync</button> <button onclick="exportExcelRakBebas()">📥 Download</button>`);
         await showModernAlert("Rak Bebas berhasil dikosongkan!", "Sukses");
     }
 }
