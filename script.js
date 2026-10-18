@@ -451,3 +451,79 @@ function showModernConfirm(message, title = "Konfirmasi") {
         };
     });
 }
+
+// =========================================================
+// FITUR GLOBAL: SHOW BARCODE
+// =========================================================
+
+function tampilkanBarcodeGlobal(kodeBarcode, namaProduk = "Produk") {
+    if (!kodeBarcode || kodeBarcode === "-") {
+        if (typeof showModernAlert === 'function') {
+            showModernAlert("Nomor barcode tidak tersedia untuk produk ini.", "Informasi");
+        } else {
+            alert("Nomor barcode tidak tersedia.");
+        }
+        return;
+    }
+
+    let modal = document.getElementById('globalBarcodeModal');
+    if (!modal) {
+        let modalDiv = document.createElement('div');
+        modalDiv.id = 'globalBarcodeModal';
+        modalDiv.className = 'modern-modal-overlay hidden';
+        modalDiv.innerHTML = `
+            <div class="modern-modal-card" style="text-align: center; max-width: 340px;">
+                <div class="modern-modal-header" style="justify-content: space-between;">
+                    <span class="modal-product-title" id="barcodeModalTitle" style="font-size: 14px;">Barcode Produk</span>
+                    <button onclick="tutupGlobalBarcodeModal()" class="modern-close-x">&times;</button>
+                </div>
+                <div style="background: #ffffff; padding: 16px; border-radius: 8px; margin: 12px 0; display: flex; justify-content: center; align-items: center; overflow-x: auto;">
+                    <svg id="svgBarcodeCanvas"></svg>
+                </div>
+                <div style="font-size: 13px; font-weight: bold; color: var(--text-color); margin-bottom: 16px;" id="barcodeModalNumber">-</div>
+                <button onclick="tutupGlobalBarcodeModal()" class="modern-btn-batal" style="width: 100%;">Tutup</button>
+            </div>
+        `;
+        document.body.appendChild(modalDiv);
+        modal = modalDiv;
+    }
+
+    document.getElementById('barcodeModalTitle').innerText = namaProduk;
+    document.getElementById('barcodeModalNumber').innerText = kodeBarcode;
+    modal.classList.remove('hidden');
+
+    try {
+        JsBarcode("#svgBarcodeCanvas", kodeBarcode, {
+            format: "CODE128",
+            lineColor: "#000000",
+            width: 2,
+            height: 70,
+            displayValue: true,
+            fontSize: 14,
+            margin: 5
+        });
+    } catch (e) {
+        console.error("Gagal merender barcode:", e);
+        try {
+            JsBarcode("#svgBarcodeCanvas", kodeBarcode, {
+                format: "CODE39",
+                lineColor: "#000000",
+                width: 2,
+                height: 70,
+                displayValue: true
+            });
+        } catch (err) {
+            if (typeof showModernAlert === 'function') {
+                showModernAlert("Format barcode tidak valid untuk dirender.", "Error");
+            }
+            tutupGlobalBarcodeModal();
+        }
+    }
+}
+
+function tutupGlobalBarcodeModal() {
+    let modal = document.getElementById('globalBarcodeModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
