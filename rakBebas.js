@@ -9,62 +9,6 @@ let html5QrCodeBebas = null;
 let isFlashOnBebas = false;
 let statusFilterSelisihBebas = false;
 
-// HELPER MODAL ALERT & CONFIRM MODERN
-function showModernAlert(message, title = "Informasi") {
-    return new Promise((resolve) => {
-        let existingModal = document.getElementById('modernGlobalAlertModal');
-        if (existingModal) existingModal.remove();
-
-        let modalDiv = document.createElement('div');
-        modalDiv.id = 'modernGlobalAlertModal';
-        modalDiv.className = 'modern-modal-overlay';
-        modalDiv.innerHTML = `
-            <div class="modern-modal-card" style="text-align: center;">
-                <div style="font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--text-color);">${title}</div>
-                <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.4;">${message}</div>
-                <button id="alertOkBtn" style="width: 100%; background: #2563eb; color: white; border: none; border-radius: 8px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer;">OK</button>
-            </div>
-        `;
-        document.body.appendChild(modalDiv);
-
-        document.getElementById('alertOkBtn').onclick = function() {
-            modalDiv.remove();
-            resolve(true);
-        };
-    });
-}
-
-function showModernConfirm(message, title = "Konfirmasi") {
-    return new Promise((resolve) => {
-        let existingModal = document.getElementById('modernGlobalConfirmModal');
-        if (existingModal) existingModal.remove();
-
-        let modalDiv = document.createElement('div');
-        modalDiv.id = 'modernGlobalConfirmModal';
-        modalDiv.className = 'modern-modal-overlay';
-        modalDiv.innerHTML = `
-            <div class="modern-modal-card" style="text-align: center;">
-                <div style="font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--text-color);">${title}</div>
-                <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.4;">${message}</div>
-                <div style="display: flex; gap: 8px;">
-                    <button id="confirmBatalBtn" style="flex: 1; background: #4b5563; color: white; border: none; border-radius: 8px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer;">Batal</button>
-                    <button id="confirmYaBtn" style="flex: 1; background: #dc2626; color: white; border: none; border-radius: 8px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer;">Ya, Lanjutkan</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modalDiv);
-
-        document.getElementById('confirmBatalBtn').onclick = function() {
-            modalDiv.remove();
-            resolve(false);
-        };
-        document.getElementById('confirmYaBtn').onclick = function() {
-            modalDiv.remove();
-            resolve(true);
-        };
-    });
-}
-
 async function loadMenuRakBebas() {
     setupWorkspaceHeader("Rak Bebas / Customize", "Memuat item bebas...", true);
 
@@ -311,6 +255,16 @@ async function tambahAtauCariItemRakBebas(code) {
         });
         let result = await response.json();
         
+        // Cek Sesi Habis
+        if (response.status === 401 || response.status === 403 || (result && result.success === false && (result.message?.includes('token') || result.message?.includes('sesi') || result.message?.includes('login')))) {
+            localStorage.removeItem('apo_token');
+            localStorage.removeItem('apo_user_name');
+            localStorage.removeItem('apo_store_name');
+            let sessionModal = document.getElementById('sessionModal');
+            if (sessionModal) sessionModal.classList.remove('hidden');
+            return;
+        }
+
         if (response.ok && result.success && result.productName) {
             namaBarang = result.productName;
             systemStock = parseInt(result.systemStock) || 0;
@@ -359,6 +313,8 @@ async function sinkronisasiStokServerBebas(isManual = false) {
     setupWorkspaceHeader("Rak Bebas / Customize", "Sync server...", true);
 
     let successCount = 0;
+    let isSessionExpired = false;
+
     for (let i = 0; i < dataRakBebas.length; i++) {
         let item = dataRakBebas[i];
         if (!item.barcode || item.barcode === "-") continue;
@@ -371,6 +327,13 @@ async function sinkronisasiStokServerBebas(isManual = false) {
             });
 
             let result = await response.json();
+
+            // DETEKSI SESI KADALUWARSA / TOKEN DITOLAK SERVER
+            if (response.status === 401 || response.status === 403 || (result && result.success === false && (result.message?.includes('token') || result.message?.includes('sesi') || result.message?.includes('login') || result.message?.includes('auth')))) {
+                isSessionExpired = true;
+                break;
+            }
+
             if (response.ok && result.success) {
                 item.oh = parseInt(result.systemStock) || 0;
                 item.selisih = item.qty - item.oh;
@@ -393,6 +356,29 @@ async function sinkronisasiStokServerBebas(isManual = false) {
         } catch (e) {
             console.error(e);
         }
+    }
+
+    // JIKA SESI HABIS
+    if (isSessionExpired) {
+        localStorage.removeItem('apo_token');
+        localStorage.removeItem('apo_user_name');
+        localStorage.removeItem('apo_store_name');
+
+        let nameEl = document.getElementById('userNameText');
+        let storeEl = document.getElementById('storeNameText');
+        let authBtn = document.getElementById('authBtn');
+        if (nameEl) nameEl.innerText = "Karyawan Alfamart";
+        if (storeEl) storeEl.innerText = "Toko Alfamart";
+        if (authBtn) {
+            authBtn.innerText = "Login";
+            authBtn.className = "auth-action-btn login-color";
+        }
+
+        let sessionModal = document.getElementById('sessionModal');
+        if (sessionModal) sessionModal.classList.remove('hidden');
+
+        setupWorkspaceHeader("Rak Bebas / Customize", "Sesi Berakhir (Harap Login)", false);
+        return;
     }
 
     localStorage.setItem(STORAGE_KEY_BEBAS, JSON.stringify(dataRakBebas));
