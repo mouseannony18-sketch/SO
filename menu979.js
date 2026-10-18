@@ -63,7 +63,7 @@ function showModernConfirm(message, title = "Konfirmasi") {
 }
 
 async function loadMenu979() {
-    setupWorkspaceHeader("Rak 979 (Stock Opname)", "Memuat data...", true);
+    setupWorkspaceHeader("Rak 979 (Stock Opname)", "Memuat data...", true, `<button onclick="sinkronisasiStokServer979(true)">🔄 Sync Server</button>`);
 
     let menuBebasContainer = document.getElementById('menuBebasContainer');
     if (menuBebasContainer) menuBebasContainer.classList.add('hidden');
@@ -227,9 +227,9 @@ function parseCSVData(text) {
     renderTabel979(dataMenu979);
     
     if (savedLocalData) {
-        setupWorkspaceHeader("Rak 979 (Stock Opname)", `${dataMenu979.length} item (Tersimpan)`, true);
+        setupWorkspaceHeader("Rak 979 (Stock Opname)", `${dataMenu979.length} item (Tersimpan)`, true, `<button onclick="sinkronisasiStokServer979(true)">🔄 Sync Server</button>`);
     } else {
-        setupWorkspaceHeader("Rak 979 (Stock Opname)", `Sinkronisasi server...`, true);
+        setupWorkspaceHeader("Rak 979 (Stock Opname)", `Sinkronisasi server...`, true, `<button onclick="sinkronisasiStokServer979(true)">🔄 Sync Server</button>`);
         sinkronisasiStokServer979(false);
     }
 }
@@ -429,7 +429,7 @@ async function konfirmasiResetData() {
             item.selisih = 0;
         });
         renderTabel979(dataMenu979);
-        setupWorkspaceHeader("Rak 979 (Stock Opname)", "Data direset.", true);
+        setupWorkspaceHeader("Rak 979 (Stock Opname)", "Data direset.", true, `<button onclick="sinkronisasiStokServer979(true)">🔄 Sync Server</button>`);
         await showModernAlert("Semua data Qty berhasil direset!", "Sukses");
     }
 }
@@ -522,11 +522,11 @@ async function sinkronisasiStokServer979(isManual = false) {
 
     if (!savedToken || isSkipped) {
         if (isManual) await showModernAlert("Mode Tamu / Belum Login: Tidak dapat melakukan sinkronisasi server.", "Perhatian");
-        setupWorkspaceHeader("Rak 979 (Stock Opname)", "Mode Tamu (OH = 0)", true);
+        setupWorkspaceHeader("Rak 979 (Stock Opname)", "Mode Tamu (OH = 0)", true, `<button onclick="sinkronisasiStokServer979(true)">🔄 Sync Server</button>`);
         return;
     }
 
-    setupWorkspaceHeader("Rak 979 (Stock Opname)", "Sync server...", true);
+    setupWorkspaceHeader("Rak 979 (Stock Opname)", "Sync server...", true, `<button onclick="sinkronisasiStokServer979(true)">🔄 Sync Server</button>`);
 
     let successCount = 0;
     let isSessionExpired = false;
@@ -544,7 +544,6 @@ async function sinkronisasiStokServer979(isManual = false) {
 
             let result = await response.json();
 
-            // DETEKSI SESI KADALUWARSA / TOKEN DITOLAK SERVER
             if (response.status === 401 || response.status === 403 || (result && result.success === false && (result.message?.includes('token') || result.message?.includes('sesi') || result.message?.includes('login') || result.message?.includes('auth')))) {
                 isSessionExpired = true;
                 break;
@@ -574,13 +573,11 @@ async function sinkronisasiStokServer979(isManual = false) {
         }
     }
 
-    // JIKA SESI HABIS
     if (isSessionExpired) {
         localStorage.removeItem('apo_token');
         localStorage.removeItem('apo_user_name');
         localStorage.removeItem('apo_store_name');
         
-        // Reset tampilan Header Global
         let nameEl = document.getElementById('userNameText');
         let storeEl = document.getElementById('storeNameText');
         let authBtn = document.getElementById('authBtn');
@@ -591,7 +588,6 @@ async function sinkronisasiStokServer979(isManual = false) {
             authBtn.className = "auth-action-btn login-color";
         }
 
-        // Tampilkan Modal Sesi Berakhir
         let sessionModal = document.getElementById('sessionModal');
         if (sessionModal) sessionModal.classList.remove('hidden');
 
@@ -600,7 +596,7 @@ async function sinkronisasiStokServer979(isManual = false) {
     }
 
     localStorage.setItem(STORAGE_KEY_979, JSON.stringify(dataMenu979));
-    setupWorkspaceHeader("Rak 979 (Stock Opname)", `${successCount} item tersinkron`, true);
+    setupWorkspaceHeader("Rak 979 (Stock Opname)", `${successCount} item tersinkron`, true, `<button onclick="sinkronisasiStokServer979(true)">🔄 Sync Server</button>`);
     if (isManual) await showModernAlert(`Sinkronisasi Rak 979 Berhasil! Stok ${successCount} item diperbarui.`, "Sukses");
 }
 
