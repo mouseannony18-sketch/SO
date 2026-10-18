@@ -9,6 +9,62 @@ let html5QrCodeBebas = null;
 let isFlashOnBebas = false;
 let statusFilterSelisihBebas = false;
 
+// HELPER MODAL ALERT & CONFIRM MODERN
+function showModernAlert(message, title = "Informasi") {
+    return new Promise((resolve) => {
+        let existingModal = document.getElementById('modernGlobalAlertModal');
+        if (existingModal) existingModal.remove();
+
+        let modalDiv = document.createElement('div');
+        modalDiv.id = 'modernGlobalAlertModal';
+        modalDiv.className = 'modern-modal-overlay';
+        modalDiv.innerHTML = `
+            <div class="modern-modal-card" style="text-align: center;">
+                <div style="font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--text-color);">${title}</div>
+                <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.4;">${message}</div>
+                <button id="alertOkBtn" style="width: 100%; background: #2563eb; color: white; border: none; border-radius: 8px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer;">OK</button>
+            </div>
+        `;
+        document.body.appendChild(modalDiv);
+
+        document.getElementById('alertOkBtn').onclick = function() {
+            modalDiv.remove();
+            resolve(true);
+        };
+    });
+}
+
+function showModernConfirm(message, title = "Konfirmasi") {
+    return new Promise((resolve) => {
+        let existingModal = document.getElementById('modernGlobalConfirmModal');
+        if (existingModal) existingModal.remove();
+
+        let modalDiv = document.createElement('div');
+        modalDiv.id = 'modernGlobalConfirmModal';
+        modalDiv.className = 'modern-modal-overlay';
+        modalDiv.innerHTML = `
+            <div class="modern-modal-card" style="text-align: center;">
+                <div style="font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--text-color);">${title}</div>
+                <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.4;">${message}</div>
+                <div style="display: flex; gap: 8px;">
+                    <button id="confirmBatalBtn" style="flex: 1; background: #4b5563; color: white; border: none; border-radius: 8px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer;">Batal</button>
+                    <button id="confirmYaBtn" style="flex: 1; background: #dc2626; color: white; border: none; border-radius: 8px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer;">Ya, Lanjutkan</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modalDiv);
+
+        document.getElementById('confirmBatalBtn').onclick = function() {
+            modalDiv.remove();
+            resolve(false);
+        };
+        document.getElementById('confirmYaBtn').onclick = function() {
+            modalDiv.remove();
+            resolve(true);
+        };
+    });
+}
+
 async function loadMenuRakBebas() {
     setupWorkspaceHeader("Rak Bebas / Customize", "Memuat item bebas...", true);
 
@@ -231,7 +287,7 @@ async function tambahAtauCariItemRakBebas(code) {
     let isSkipped = localStorage.getItem('apo_skipped') === 'true';
 
     if (!savedToken || isSkipped) {
-        alert("Mode Tamu / Belum Login: Tidak dapat melakukan verifikasi barcode ke server.");
+        await showModernAlert("Mode Tamu / Belum Login: Tidak dapat melakukan verifikasi barcode ke server.", "Akses Terbatas");
         return;
     }
 
@@ -260,7 +316,7 @@ async function tambahAtauCariItemRakBebas(code) {
     }
 
     if (!isFound) {
-        alert(`Item dengan Barcode / PLU [${code}] tidak tersedia di inventory. Coba lagi atau scan ulang.`);
+        await showModernAlert(`Item dengan Barcode / PLU [${code}] tidak tersedia di inventory. Coba lagi atau scan ulang.`, "Item Tidak Ditemukan");
         return;
     }
 
@@ -285,12 +341,12 @@ async function sinkronisasiStokServerBebas(isManual = false) {
     let isSkipped = localStorage.getItem('apo_skipped') === 'true';
 
     if (!savedToken || isSkipped) {
-        if (isManual) alert("Mode Tamu / Belum Login: Tidak dapat melakukan sinkronisasi server.");
+        if (isManual) await showModernAlert("Mode Tamu / Belum Login: Tidak dapat melakukan sinkronisasi server.", "Perhatian");
         return;
     }
 
     if (dataRakBebas.length === 0) {
-        if (isManual) alert("Belum ada item di Rak Bebas untuk disinkronkan.");
+        if (isManual) await showModernAlert("Belum ada item di Rak Bebas untuk disinkronkan.", "Informasi");
         return;
     }
 
@@ -335,7 +391,7 @@ async function sinkronisasiStokServerBebas(isManual = false) {
 
     localStorage.setItem(STORAGE_KEY_BEBAS, JSON.stringify(dataRakBebas));
     setupWorkspaceHeader("Rak Bebas / Customize", `${dataRakBebas.length} item tersimpan`, true, `<button onclick="exportExcelRakBebas()">📥 Download / Cetak</button>`);
-    if (isManual) alert(`Sinkronisasi Rak Bebas Berhasil! Stok ${successCount} item diperbarui.`);
+    if (isManual) await showModernAlert(`Sinkronisasi Rak Bebas Berhasil! Stok ${successCount} item diperbarui.`, "Sukses");
 }
 
 async function bukaScannerBebas() {
@@ -384,8 +440,8 @@ async function bukaScannerBebas() {
                 tambahAtauCariItemRakBebas(decodedText.trim());
             },
             (errorMessage) => {}
-        ).catch(fallbackErr => {
-            alert("Gagal mengaktifkan kamera: " + fallbackErr);
+        ).catch(async fallbackErr => {
+            await showModernAlert("Gagal mengaktifkan kamera: " + fallbackErr, "Error Kamera");
             scannerBox.classList.add('hidden');
         });
     }
@@ -396,9 +452,9 @@ function toggleFlashBebas() {
     isFlashOnBebas = !isFlashOnBebas;
     html5QrCodeBebas.applyVideoConstraints({ advanced: [{ torch: isFlashOnBebas }] }).then(() => {
         updateFlashButtonUIBebas();
-    }).catch(() => {
+    }).catch(async () => {
         isFlashOnBebas = !isFlashOnBebas;
-        alert("Fitur Senter tidak didukung perangkat ini.");
+        await showModernAlert("Fitur Senter tidak didukung perangkat ini.", "Informasi");
     });
 }
 
@@ -470,9 +526,10 @@ function simpanQtyBebas() {
     tutupPopupBebas();
 }
 
-function resetQtyItemBebas() {
+async function resetQtyItemBebas() {
     if (currentBebasIndex === null) return;
-    if (confirm("Reset Qty item ini menjadi 0?")) {
+    let isConfirmed = await showModernConfirm("Reset Qty item ini menjadi 0?", "Konfirmasi Reset");
+    if (isConfirmed) {
         let item = dataRakBebas[currentBebasIndex];
         item.qty = 0;
         item.selisih = item.qty - item.oh;
@@ -483,9 +540,10 @@ function resetQtyItemBebas() {
     }
 }
 
-function hapusItemDariPopup() {
+async function hapusItemDariPopup() {
     if (currentBebasIndex === null) return;
-    if (confirm("Hapus item ini dari daftar Rak Bebas?")) {
+    let isConfirmed = await showModernConfirm("Hapus item ini dari daftar Rak Bebas?", "Konfirmasi Hapus");
+    if (isConfirmed) {
         dataRakBebas.splice(currentBebasIndex, 1);
         dataRakBebas.forEach((d, idx) => d.no = idx + 1);
         localStorage.setItem(STORAGE_KEY_BEBAS, JSON.stringify(dataRakBebas));
@@ -495,13 +553,14 @@ function hapusItemDariPopup() {
     }
 }
 
-function konfirmasiResetRakBebas() {
-    if (confirm("PERINGATAN: Apakah Anda yakin ingin mereset dan menghapus semua item di Rak Bebas?")) {
+async function konfirmasiResetRakBebas() {
+    let isConfirmed = await showModernConfirm("PERINGATAN: Apakah Anda yakin ingin mereset dan menghapus semua item di Rak Bebas?", "Reset Seluruh Rak");
+    if (isConfirmed) {
         localStorage.removeItem(STORAGE_KEY_BEBAS);
         dataRakBebas = [];
         renderTabelRakBebas(dataRakBebas);
         setupWorkspaceHeader("Rak Bebas / Customize", "Data direset", true, `<button onclick="exportExcelRakBebas()">📥 Download / Cetak</button>`);
-        alert("Rak Bebas berhasil dikosongkan!");
+        await showModernAlert("Rak Bebas berhasil dikosongkan!", "Sukses");
     }
 }
 
