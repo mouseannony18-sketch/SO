@@ -230,27 +230,38 @@ async function tambahAtauCariItemRakBebas(code) {
     let savedToken = localStorage.getItem('apo_token');
     let isSkipped = localStorage.getItem('apo_skipped') === 'true';
 
-    let namaBarang = "Barang Custom / Manual";
+    if (!savedToken || isSkipped) {
+        alert("Mode Tamu / Belum Login: Tidak dapat melakukan verifikasi barcode ke server.");
+        return;
+    }
+
+    let namaBarang = "";
     let systemStock = 0;
     let pluVal = code;
     let barcodeVal = code;
+    let isFound = false;
 
-    if (savedToken && !isSkipped) {
-        try {
-            let response = await fetch('/api/scan', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ barcode: code, token: savedToken })
-            });
-            let result = await response.json();
-            if (response.ok && result.success) {
-                namaBarang = result.productName || "Barang Scan";
-                systemStock = parseInt(result.systemStock) || 0;
-                if (result.raw && result.raw.plu) pluVal = result.raw.plu;
-            }
-        } catch (e) {
-            console.error(e);
+    try {
+        let response = await fetch('/api/scan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ barcode: code, token: savedToken })
+        });
+        let result = await response.json();
+        
+        if (response.ok && result.success && result.productName) {
+            namaBarang = result.productName;
+            systemStock = parseInt(result.systemStock) || 0;
+            if (result.raw && result.raw.plu) pluVal = result.raw.plu;
+            isFound = true;
         }
+    } catch (e) {
+        console.error(e);
+    }
+
+    if (!isFound) {
+        alert(`Item dengan Barcode / PLU [${code}] tidak tersedia di inventory. Coba lagi atau scan ulang.`);
+        return;
     }
 
     let newItem = {
@@ -450,7 +461,7 @@ function simpanQtyBebas() {
     let tambah = parseInt(document.getElementById('modalInputTambahBebas').value) || 0;
     let item = dataRakBebas[currentBebasIndex];
 
-    item.qty += tambah; // Menambah Qty ke nilai sebelumnya
+    item.qty += tambah;
     if (item.qty < 0) item.qty = 0;
     item.selisih = item.qty - item.oh;
 
