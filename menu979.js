@@ -246,7 +246,13 @@ function renderTabel979(listData) {
         let tr = document.createElement('tr');
         tr.innerHTML = `
             <td style="text-align: center; font-size: 12px;">${item.no}</td>
-            <td style="font-size: 12px;"><b>${item.plu}</b><br><small style="color: var(--text-muted);">${item.barcode}</small></td>
+            <td style="font-size: 12px;">
+                <b>${item.plu}</b><br>
+                <span onclick="tampilkanBarcodeGlobal('${item.barcode}', '${item.namaItem.replace(/'/g, "\\'")}')" style="color: #38bdf8; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Klik untuk tampilkan barcode">
+                    <span>${item.barcode}</span>
+                    <span style="font-size: 10px; background: rgba(56, 189, 248, 0.15); padding: 1px 4px; border-radius: 4px;">🪪 🔍</span>
+                </span>
+            </td>
             <td style="font-size: 12px;">${item.namaItem}</td>
             <td style="text-align: center;">
                 <div onclick="bukaPopupQty(${realIndex})" class="qty-pill-box" title="Klik untuk tambah/hitung ulang">
