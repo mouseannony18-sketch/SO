@@ -6,7 +6,6 @@ let currentIndexAktif = null;
 let html5QrCode = null;
 let isFlashOn = false;
 
-// HELPER MODAL ALERT & CONFIRM MODERN
 function showModernAlert(message, title = "Informasi") {
     return new Promise((resolve) => {
         let existingModal = document.getElementById('modernGlobalAlertModal');
@@ -63,7 +62,10 @@ function showModernConfirm(message, title = "Konfirmasi") {
 }
 
 async function loadMenu979() {
-    setupWorkspaceHeader("Rak 979 (Stock Opname)", "Memuat data...", true, `<button onclick="sinkronisasiStokServer979(true)">🔄 Sync Server</button>`);
+    setupWorkspaceHeader("Rak 979 (Stock Opname)", "Memuat data...", true, `
+        <button onclick="tutupDropdownOtomatis(); sinkronisasiStokServer979(true);">🔄 Sync Server</button>
+        <button onclick="tutupDropdownOtomatis(); exportExcel979();">📥 Download / Cetak</button>
+    `);
 
     let menuBebasContainer = document.getElementById('menuBebasContainer');
     if (menuBebasContainer) menuBebasContainer.classList.add('hidden');
@@ -77,13 +79,10 @@ async function loadMenu979() {
     if (menu979Container) {
         menu979Container.classList.remove('hidden');
         menu979Container.innerHTML = `
-            <!-- BARIS 1: TOMBOL RESET & CEK SELISIH -->
             <div class="top-action-bar-row1">
                 <button onclick="konfirmasiResetData()" class="action-top-btn reset-btn" title="Reset Semua Data Qty">🗑️ Reset Data</button>
                 <button onclick="filterSelisihToggle()" id="btnCekSelisih" class="action-top-btn selisih-btn">📊 Cek Selisih</button>
             </div>
-
-            <!-- BARIS 2: PENCARIAN 75% & TOMBOL SCAN 20% -->
             <div class="top-action-bar-row2">
                 <div class="search-box-wrapper">
                     <span class="search-icon">🔍</span>
@@ -92,8 +91,6 @@ async function loadMenu979() {
                 </div>
                 <button onclick="bukaScannerKamera()" class="scan-btn">📷 Scan</button>
             </div>
-
-            <!-- AREA SCANNER KAMERA -->
             <div id="scannerContainer" class="scanner-box hidden">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                     <b style="font-size: 12px; color: #38bdf8;">Arahkan Kamera ke Barcode</b>
@@ -104,8 +101,6 @@ async function loadMenu979() {
                 </div>
                 <div id="reader"></div>
             </div>
-
-            <!-- TABEL UTAMA FULL LAYAR -->
             <div class="table-full-container">
                 <table id="tabelMenu979">
                     <thead>
@@ -140,26 +135,20 @@ async function loadMenu979() {
                     <span class="modal-product-title" id="modalNamaItem">-</span>
                     <button onclick="tutupPopupQty()" class="modern-close-x">&times;</button>
                 </div>
-                
                 <div class="modern-meta-info">
                     <span>PLU: <b id="modalPluText">-</b></span>
                     <span>•</span>
                     <span>Barcode: <b id="modalBarcodeText">-</b></span>
                 </div>
-
                 <div class="modern-input-box-area">
-                    <div class="modern-current-label">
-                        Qty Tersimpan: <span id="modalCurrentQty">0</span>
-                    </div>
+                    <div class="modern-current-label">Qty Tersimpan: <span id="modalCurrentQty">0</span></div>
                     <label class="modern-input-label">Tambah Qty (Tempat Lain):</label>
-                    
                     <div class="modern-stepper-row">
                         <button onclick="ubahNilaiInputPopup(-1)" class="modern-step-btn">-</button>
                         <input type="number" id="modalInputTambah" value="0" class="modern-number-input" />
                         <button onclick="ubahNilaiInputPopup(1)" class="modern-step-btn">+</button>
                     </div>
                 </div>
-
                 <div class="modern-btn-row" style="margin-bottom: 8px;">
                     <button onclick="tutupPopupQty()" class="modern-btn-batal">Batal</button>
                     <button onclick="simpanQtyTambah()" class="modern-btn-simpan">Simpan</button>
@@ -226,10 +215,15 @@ function parseCSVData(text) {
     dataMenu979 = masterItems;
     renderTabel979(dataMenu979);
     
+    let dropdownHTML = `
+        <button onclick="tutupDropdownOtomatis(); sinkronisasiStokServer979(true);">🔄 Sync Server</button>
+        <button onclick="tutupDropdownOtomatis(); exportExcel979();">📥 Download / Cetak</button>
+    `;
+
     if (savedLocalData) {
-        setupWorkspaceHeader("Rak 979 (Stock Opname)", `${dataMenu979.length} item (Tersimpan)`, true, `<button onclick="sinkronisasiStokServer979(true)">🔄 Sync Server</button>`);
+        setupWorkspaceHeader("Rak 979 (Stock Opname)", `${dataMenu979.length} item (Tersimpan)`, true, dropdownHTML);
     } else {
-        setupWorkspaceHeader("Rak 979 (Stock Opname)", `Sinkronisasi server...`, true, `<button onclick="sinkronisasiStokServer979(true)">🔄 Sync Server</button>`);
+        setupWorkspaceHeader("Rak 979 (Stock Opname)", `Sinkronisasi server...`, true, dropdownHTML);
         sinkronisasiStokServer979(false);
     }
 }
@@ -429,7 +423,10 @@ async function konfirmasiResetData() {
             item.selisih = 0;
         });
         renderTabel979(dataMenu979);
-        setupWorkspaceHeader("Rak 979 (Stock Opname)", "Data direset.", true, `<button onclick="sinkronisasiStokServer979(true)">🔄 Sync Server</button>`);
+        setupWorkspaceHeader("Rak 979 (Stock Opname)", "Data direset.", true, `
+            <button onclick="tutupDropdownOtomatis(); sinkronisasiStokServer979(true);">🔄 Sync Server</button>
+            <button onclick="tutupDropdownOtomatis(); exportExcel979();">📥 Download / Cetak</button>
+        `);
         await showModernAlert("Semua data Qty berhasil direset!", "Sukses");
     }
 }
@@ -520,13 +517,18 @@ async function sinkronisasiStokServer979(isManual = false) {
     let savedToken = localStorage.getItem('apo_token');
     let isSkipped = localStorage.getItem('apo_skipped') === 'true';
 
+    let dropdownHTML = `
+        <button onclick="tutupDropdownOtomatis(); sinkronisasiStokServer979(true);">🔄 Sync Server</button>
+        <button onclick="tutupDropdownOtomatis(); exportExcel979();">📥 Download / Cetak</button>
+    `;
+
     if (!savedToken || isSkipped) {
         if (isManual) await showModernAlert("Mode Tamu / Belum Login: Tidak dapat melakukan sinkronisasi server.", "Perhatian");
-        setupWorkspaceHeader("Rak 979 (Stock Opname)", "Mode Tamu (OH = 0)", true, `<button onclick="sinkronisasiStokServer979(true)">🔄 Sync Server</button>`);
+        setupWorkspaceHeader("Rak 979 (Stock Opname)", "Mode Tamu (OH = 0)", true, dropdownHTML);
         return;
     }
 
-    setupWorkspaceHeader("Rak 979 (Stock Opname)", "Sync server...", true, `<button onclick="sinkronisasiStokServer979(true)">🔄 Sync Server</button>`);
+    setupWorkspaceHeader("Rak 979 (Stock Opname)", "Sync server...", true, dropdownHTML);
 
     let successCount = 0;
     let isSessionExpired = false;
@@ -596,7 +598,7 @@ async function sinkronisasiStokServer979(isManual = false) {
     }
 
     localStorage.setItem(STORAGE_KEY_979, JSON.stringify(dataMenu979));
-    setupWorkspaceHeader("Rak 979 (Stock Opname)", `${successCount} item tersinkron`, true, `<button onclick="sinkronisasiStokServer979(true)">🔄 Sync Server</button>`);
+    setupWorkspaceHeader("Rak 979 (Stock Opname)", `${successCount} item tersinkron`, true, dropdownHTML);
     if (isManual) await showModernAlert(`Sinkronisasi Rak 979 Berhasil! Stok ${successCount} item diperbarui.`, "Sukses");
 }
 
