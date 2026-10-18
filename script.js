@@ -1,461 +1,54 @@
-let tokenGlobal = "";
-let dataSO = [];
-let menuAktif = "";
-let currentNik = "";
-let isSessionValid = true;
+// =========================================================
+// SCRIPT UTAMA APLIKASI STOCK OPNAME (script.js)
+// =========================================================
 
-window.onload = function() {
-    let savedTheme = localStorage.getItem('apo_theme') || 'dark';
-    if (savedTheme === 'light') {
-        document.body.classList.remove('dark-mode');
-        document.body.classList.add('light-mode');
-        let themeBtn = document.querySelector('.theme-toggle-btn');
-        if (themeBtn) themeBtn.innerText = '☀️';
-    }
-
-    let savedToken = localStorage.getItem('apo_token');
-    let savedNik = localStorage.getItem('apo_nik');
-    let savedName = localStorage.getItem('apo_name');
-    let savedStore = localStorage.getItem('apo_store');
-    let isSkipped = localStorage.getItem('apo_skipped') === 'true';
-
-    let isPageRefreshed = sessionStorage.getItem('apo_is_refreshed');
-    let activeMenu = localStorage.getItem('apo_active_menu');
-
-    if ((savedToken && savedNik) || isSkipped) {
-        tokenGlobal = savedToken || "";
-        currentNik = savedNik || "Tamu";
-        isSessionValid = savedToken ? true : false;
-        
-        let userNameEl = document.getElementById('userNameText');
-        let storeNameEl = document.getElementById('storeNameText');
-        if (userNameEl) userNameEl.innerText = savedName || (isSkipped ? "Mode Tamu (Tanpa Login)" : "Karyawan Alfamart");
-        if (storeNameEl) storeNameEl.innerText = savedStore || "Toko Alfamart";
-
-        updateAuthButtonState(isSessionValid);
-
-        let loginCard = document.getElementById('loginCard');
-        let sessionModal = document.getElementById('sessionModal');
-        let workspaceCard = document.getElementById('workspaceCard');
-        let mainMenuCard = document.getElementById('mainMenuCard');
-
-        if (loginCard) loginCard.classList.add('hidden');
-        if (sessionModal) sessionModal.classList.add('hidden');
-
-        if (isPageRefreshed && activeMenu) {
-            if (mainMenuCard) mainMenuCard.classList.add('hidden');
-            if (workspaceCard) workspaceCard.classList.remove('hidden');
-            
-            if (activeMenu === '979' && typeof loadMenu979 === 'function') {
-                loadMenu979();
-            } else if (activeMenu === 'bebas' && typeof loadMenuRakBebas === 'function') {
-                loadMenuRakBebas();
-            }
-        } else {
-            localStorage.removeItem('apo_active_menu');
-            if (workspaceCard) workspaceCard.classList.add('hidden');
-            if (mainMenuCard) mainMenuCard.classList.remove('hidden');
-        }
-
-        sessionStorage.setItem('apo_is_refreshed', 'true');
-    } else {
-        isSessionValid = false;
-        updateAuthButtonState(false);
-        showLoginScreen();
-    }
-};
-
-window.onpopstate = function(event) {
-    let workspaceCard = document.getElementById('workspaceCard');
-    let mainMenuCard = document.getElementById('mainMenuCard');
-
-    if (workspaceCard && !workspaceCard.classList.contains('hidden')) {
-        localStorage.removeItem('apo_active_menu');
-        workspaceCard.classList.add('hidden');
-        if (mainMenuCard) mainMenuCard.classList.remove('hidden');
-    }
-};
-
-function toggleFullScreen() {
-    let elem = document.documentElement;
-    let fsBtn = document.getElementById('fsToggleBtn');
-
-    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-        if (elem.requestFullscreen) {
-            elem.requestFullscreen();
-        } else if (elem.webkitRequestFullscreen) {
-            elem.webkitRequestFullscreen();
-        } else if (elem.msRequestFullscreen) {
-            elem.msRequestFullscreen();
-        }
-        if (fsBtn) fsBtn.innerText = "🗗";
-    } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-            document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) {
-            document.msExitFullscreen();
-        }
-        if (fsBtn) fsBtn.innerText = "⛶";
-    }
-}
-
-function toggleTheme() {
-    let themeBtn = document.querySelector('.theme-toggle-btn');
-    if (document.body.classList.contains('dark-mode')) {
-        document.body.classList.remove('dark-mode');
-        document.body.classList.add('light-mode');
-        if (themeBtn) themeBtn.innerText = '☀️';
-        localStorage.setItem('apo_theme', 'light');
-    } else {
-        document.body.classList.remove('light-mode');
-        document.body.classList.add('dark-mode');
-        if (themeBtn) themeBtn.innerText = '🌙';
-        localStorage.setItem('apo_theme', 'dark');
-    }
-}
-
-function updateAuthButtonState(isValid) {
-    let authBtn = document.getElementById('authBtn');
-    if (!authBtn) return;
-    if (isValid) {
-        authBtn.innerText = "Keluar";
-        authBtn.className = "auth-action-btn logout-color";
-    } else {
-        authBtn.innerText = "Login";
-        authBtn.className = "auth-action-btn login-color";
-    }
-}
-
-function handleAuthAction() {
-    if (isSessionValid) {
-        logout();
-    } else {
-        showLoginScreen();
-    }
-}
-
-function showLoginScreen() {
-    localStorage.removeItem('apo_active_menu');
-    let sessionModal = document.getElementById('sessionModal');
-    let workspaceCard = document.getElementById('workspaceCard');
-    let mainMenuCard = document.getElementById('mainMenuCard');
-    let loginCard = document.getElementById('loginCard');
-
-    if (sessionModal) sessionModal.classList.add('hidden');
-    if (workspaceCard) workspaceCard.classList.add('hidden');
-    if (mainMenuCard) mainMenuCard.classList.add('hidden');
-    if (loginCard) loginCard.classList.remove('hidden');
-}
-
-function lewatiLogin() {
-    localStorage.setItem('apo_skipped', 'true');
-    localStorage.removeItem('apo_token');
-    localStorage.removeItem('apo_nik');
-    localStorage.removeItem('apo_name');
-    localStorage.removeItem('apo_store');
-    isSessionValid = false;
-    
-    let userNameEl = document.getElementById('userNameText');
-    let storeNameEl = document.getElementById('storeNameText');
-    if (userNameEl) userNameEl.innerText = "Mode Tamu (Tanpa Login)";
-    if (storeNameEl) storeNameEl.innerText = "Toko Alfamart";
-    
-    updateAuthButtonState(false);
-
-    let sessionModal = document.getElementById('sessionModal');
-    let loginCard = document.getElementById('loginCard');
-    let workspaceCard = document.getElementById('workspaceCard');
-    let mainMenuCard = document.getElementById('mainMenuCard');
-
-    if (sessionModal) sessionModal.classList.add('hidden');
-    if (loginCard) loginCard.classList.add('hidden');
-    if (workspaceCard) workspaceCard.classList.add('hidden');
-    if (mainMenuCard) mainMenuCard.classList.remove('hidden');
-}
-
-async function prosesLogin() {
-    let nik = document.getElementById('nik').value.trim();
-    let pin = document.getElementById('pin').value;
-    let otp = document.getElementById('otp').value;
-    let status = document.getElementById('statusLogin');
-
-    if(!nik || !pin || !otp) {
-        if (status) status.innerText = "Semua kolom harus diisi!";
-        return;
-    }
-
-    if (status) status.innerText = "Menghubungi server...";
-
-    try {
-        let response = await fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nik, pin, otp })
-        });
-
-        let result = await response.json();
-
-        if(response.ok && result.success) {
-            tokenGlobal = result.token;
-            currentNik = nik;
-            let employeeName = result.employeeName || "Karyawan Alfamart";
-            let storeName = result.storeName || "Toko Alfamart";
-            
-            localStorage.setItem('apo_token', tokenGlobal);
-            localStorage.setItem('apo_nik', currentNik);
-            localStorage.setItem('apo_name', employeeName);
-            localStorage.setItem('apo_store', storeName);
-            localStorage.removeItem('apo_skipped');
-
-            isSessionValid = true;
-            updateAuthButtonState(true);
-
-            let userNameEl = document.getElementById('userNameText');
-            let storeNameEl = document.getElementById('storeNameText');
-            if (userNameEl) userNameEl.innerText = employeeName;
-            if (storeNameEl) storeNameEl.innerText = storeName;
-
-            let sessionModal = document.getElementById('sessionModal');
-            let loginCard = document.getElementById('loginCard');
-            let workspaceCard = document.getElementById('workspaceCard');
-            let mainMenuCard = document.getElementById('mainMenuCard');
-
-            if (sessionModal) sessionModal.classList.add('hidden');
-            if (loginCard) loginCard.classList.add('hidden');
-            if (workspaceCard) workspaceCard.classList.add('hidden');
-            if (mainMenuCard) mainMenuCard.classList.remove('hidden');
-        } else {
-            if (status) status.innerText = "Gagal: " + (result.message || "Autentikasi ditolak");
-        }
-    } catch (error) {
-        if (status) status.innerText = "Terjadi kesalahan jaringan.";
-        console.error(error);
-    }
-}
-
-function pilihMenu(jenis) {
-    let savedToken = localStorage.getItem('apo_token');
-    let isSkipped = localStorage.getItem('apo_skipped') === 'true';
-
-    if (!savedToken && !isSkipped) {
-        isSessionValid = false;
-        updateAuthButtonState(false);
-        let sessionModal = document.getElementById('sessionModal');
-        if (sessionModal) sessionModal.classList.remove('hidden');
-        return;
-    }
-
-    menuAktif = jenis;
-    localStorage.setItem('apo_active_menu', jenis);
-    history.pushState({ menu: jenis }, "", "#" + jenis);
-
-    let mainMenuCard = document.getElementById('mainMenuCard');
-    let workspaceCard = document.getElementById('workspaceCard');
-
-    if (mainMenuCard) mainMenuCard.classList.add('hidden');
-    if (workspaceCard) workspaceCard.classList.remove('hidden');
-
-    let menu979Container = document.getElementById('menu979Container');
-    let menuBebasContainer = document.getElementById('menuBebasContainer');
-    let soArea = document.getElementById('soFormArea');
-    let adminArea = document.getElementById('adminFormArea');
-
-    if (menu979Container) menu979Container.classList.add('hidden');
-    if (menuBebasContainer) menuBebasContainer.classList.add('hidden');
-    if (soArea) soArea.classList.add('hidden');
-    if (adminArea) adminArea.classList.add('hidden');
-
-    if (jenis === '979') {
-        if (typeof loadMenu979 === 'function') {
-            loadMenu979();
-        }
-    } else if (jenis === 'partial') {
-        setupWorkspaceHeader("SO Reguler / Partial", "Mode input reguler");
-        if (soArea) soArea.classList.remove('hidden');
-    } else if (jenis === 'bebas') {
-        if (typeof loadMenuRakBebas === 'function') {
-            loadMenuRakBebas();
-        }
-    } else if (jenis === 'admin') {
-        let passwordAdmin = prompt("Masukkan PIN/Sandi khusus Admin:");
-        if (passwordAdmin === "admin123") {
-            setupWorkspaceHeader("Tambah Item Inventory (Admin)", "Manajemen data master");
-            if (adminArea) adminArea.classList.remove('hidden');
-        } else {
-            alert("Akses ditolak! Sandi admin salah.");
-            kembaliKeMenu();
-            return;
-        }
-    }
-}
-
-function setupWorkspaceHeader(judul, subtitle, showSyncButton = false, customActionHTML = "") {
-    let titleEl = document.getElementById('workspaceTitleText');
-    let subtitleEl = document.getElementById('workspaceSubtitleText');
-    let extraSlot = document.getElementById('extraActionDropdownSlot');
-
-    if (titleEl) titleEl.innerText = judul;
-    if (subtitleEl) subtitleEl.innerText = subtitle;
-
-    if (extraSlot) {
-        let htmlContent = "";
-        if (showSyncButton) {
-            htmlContent += `<button onclick="triggerSyncServerGlobal()">🔄 Sync Server</button>`;
-        }
-        
-        if (typeof exportExcel979 === 'function' && (judul.includes("979") || judul.includes("Rak")) && !customActionHTML.includes("Download")) {
-            htmlContent += `<button onclick="exportExcel979()">📥 Download / Cetak</button>`;
-        }
-        
-        htmlContent += customActionHTML;
-        extraSlot.innerHTML = htmlContent;
-    }
-}
-
-// Pengarah fungsi Sync Server otomatis berdasarkan menu yang sedang dibuka
-function triggerSyncServerGlobal() {
-    if (menuAktif === '979' && typeof sinkronisasiStokServer979 === 'function') {
-        sinkronisasiStokServer979(true);
-    } else if (menuAktif === 'bebas' && typeof sinkronisasiStokServerBebas === 'function') {
-        sinkronisasiStokServerBebas(true);
-    }
-}
-
-function toggleGlobalDropdownMenu() {
-    let dropdown = document.getElementById('globalSettingsDropdown');
-    if (dropdown) {
-        dropdown.classList.toggle('hidden');
-    }
-}
-
-window.addEventListener('click', function(event) {
-    if (!event.target.matches('.settings-box-btn') && !event.target.closest('.settings-box-btn')) {
-        let dropdown = document.getElementById('globalSettingsDropdown');
-        if (dropdown && !dropdown.classList.contains('hidden')) {
-            dropdown.classList.add('hidden');
-        }
-    }
+// Jalankan pengecekan sesi saat halaman pertama kali dimuat
+document.addEventListener("DOMContentLoaded", function () {
+    cekSesiAwal();
 });
 
-function tutupModalLogin() {
-    let sessionModal = document.getElementById('sessionModal');
-    if (sessionModal) sessionModal.classList.add('hidden');
-    showLoginScreen();
-}
+function cekSesiAwal() {
+    let savedToken = localStorage.getItem('apo_token');
+    let isSkipped = localStorage.getItem('apo_skipped') === 'true';
+    let savedUserName = localStorage.getItem('apo_user_name');
+    let savedStoreName = localStorage.getItem('apo_store_name');
 
-function tutupModalDanLanjutkan() {
-    let sessionModal = document.getElementById('sessionModal');
-    if (sessionModal) sessionModal.classList.add('hidden');
-    lewatiLogin();
-}
-
-function kembaliKeMenu() {
-    localStorage.removeItem('apo_active_menu');
-    sessionStorage.removeItem('apo_is_refreshed');
-
-    let workspaceCard = document.getElementById('workspaceCard');
-    if (workspaceCard) workspaceCard.classList.add('hidden');
-
-    let sessionModal = document.getElementById('sessionModal');
-    if (sessionModal) sessionModal.classList.add('hidden');
-
+    let loginCard = document.getElementById('loginCard');
     let mainMenuCard = document.getElementById('mainMenuCard');
-    if (mainMenuCard) {
-        mainMenuCard.classList.remove('hidden');
-        history.pushState("", document.title, window.location.pathname);
+    let workspaceCard = document.getElementById('workspaceCard');
+
+    // Jika token aktif atau mode tamu (skipped) dipilih
+    if ((savedToken && savedToken !== "") || isSkipped) {
+        if (loginCard) loginCard.classList.add('hidden');
+        if (mainMenuCard) mainMenuCard.classList.remove('hidden');
+
+        let nameEl = document.getElementById('userNameText');
+        let storeEl = document.getElementById('storeNameText');
+        let authBtn = document.getElementById('authBtn');
+
+        if (savedUserName && nameEl) nameEl.innerText = savedUserName;
+        if (savedStoreName && storeEl) storeEl.innerText = savedStoreName;
+
+        if (isSkipped && nameEl) {
+            nameEl.innerText = "Mode Tamu";
+            if (storeEl) storeEl.innerText = "Akses Terbatas";
+        }
+
+        if (authBtn) {
+            authBtn.innerText = "Keluar";
+            authBtn.className = "auth-action-btn logout-color";
+        }
     } else {
-        window.location.href = window.location.pathname;
+        // Jika belum login atau sesi habis
+        if (loginCard) loginCard.classList.remove('hidden');
+        if (mainMenuCard) mainMenuCard.classList.add('hidden');
+        if (workspaceCard) workspaceCard.classList.add('hidden');
     }
-}
-
-function logout() {
-    localStorage.removeItem('apo_token');
-    localStorage.removeItem('apo_nik');
-    localStorage.removeItem('apo_name');
-    localStorage.removeItem('apo_store');
-    localStorage.removeItem('apo_skipped');
-    localStorage.removeItem('apo_active_menu');
-    
-    tokenGlobal = "";
-    currentNik = "";
-    isSessionValid = false;
-    
-    updateAuthButtonState(false);
-    showLoginScreen();
-}
-
-function tambahData() {
-    alert("Fitur SO Reguler aktif.");
-}
-function simpanItemAdmin() {
-    alert("Item admin disimpan.");
-}
-
-// =========================================================
-// MODERN MODAL ALERT & CONFIRM (Pengganti alert/confirm standar)
-// =========================================================
-
-function showModernAlert(message, title = "Informasi") {
-    return new Promise((resolve) => {
-        let existingModal = document.getElementById('modernGlobalAlertModal');
-        if (existingModal) existingModal.remove();
-
-        let modalDiv = document.createElement('div');
-        modalDiv.id = 'modernGlobalAlertModal';
-        modalDiv.className = 'modern-modal-overlay';
-        modalDiv.innerHTML = `
-            <div class="modern-modal-card" style="text-align: center;">
-                <div style="font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--text-color);">${title}</div>
-                <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.4;">${message}</div>
-                <button id="alertOkBtn" style="width: 100%; background: #2563eb; color: white; border: none; border-radius: 8px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer;">OK</button>
-            </div>
-        `;
-        document.body.appendChild(modalDiv);
-
-        document.getElementById('alertOkBtn').onclick = function() {
-            modalDiv.remove();
-            resolve(true);
-        };
-    });
-}
-
-function showModernConfirm(message, title = "Konfirmasi") {
-    return new Promise((resolve) => {
-        let existingModal = document.getElementById('modernGlobalConfirmModal');
-        if (existingModal) existingModal.remove();
-
-        let modalDiv = document.createElement('div');
-        modalDiv.id = 'modernGlobalConfirmModal';
-        modalDiv.className = 'modern-modal-overlay';
-        modalDiv.innerHTML = `
-            <div class="modern-modal-card" style="text-align: center;">
-                <div style="font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--text-color);">${title}</div>
-                <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.4;">${message}</div>
-                <div style="display: flex; gap: 8px;">
-                    <button id="confirmBatalBtn" style="flex: 1; background: #4b5563; color: white; border: none; border-radius: 8px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer;">Batal</button>
-                    <button id="confirmYaBtn" style="flex: 1; background: #dc2626; color: white; border: none; border-radius: 8px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer;">Ya, Lanjutkan</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modalDiv);
-
-        document.getElementById('confirmBatalBtn').onclick = function() {
-            modalDiv.remove();
-            resolve(false);
-        };
-        document.getElementById('confirmYaBtn').onclick = function() {
-            modalDiv.remove();
-            resolve(true);
-        };
-    });
 }
 
 // =========================================================
 // FITUR GLOBAL: SHOW BARCODE
 // =========================================================
-
 function tampilkanBarcodeGlobal(kodeBarcode, namaProduk = "Produk") {
     if (!kodeBarcode || kodeBarcode === "-") {
         if (typeof showModernAlert === 'function') {
@@ -467,56 +60,37 @@ function tampilkanBarcodeGlobal(kodeBarcode, namaProduk = "Produk") {
     }
 
     let modal = document.getElementById('globalBarcodeModal');
-    if (!modal) {
-        let modalDiv = document.createElement('div');
-        modalDiv.id = 'globalBarcodeModal';
-        modalDiv.className = 'modern-modal-overlay hidden';
-        modalDiv.innerHTML = `
-            <div class="modern-modal-card" style="text-align: center; max-width: 340px;">
-                <div class="modern-modal-header" style="justify-content: space-between;">
-                    <span class="modal-product-title" id="barcodeModalTitle" style="font-size: 14px;">Barcode Produk</span>
-                    <button onclick="tutupGlobalBarcodeModal()" class="modern-close-x">&times;</button>
-                </div>
-                <div style="background: #ffffff; padding: 16px; border-radius: 8px; margin: 12px 0; display: flex; justify-content: center; align-items: center; overflow-x: auto;">
-                    <svg id="svgBarcodeCanvas"></svg>
-                </div>
-                <div style="font-size: 13px; font-weight: bold; color: var(--text-color); margin-bottom: 16px;" id="barcodeModalNumber">-</div>
-                <button onclick="tutupGlobalBarcodeModal()" class="modern-btn-batal" style="width: 100%;">Tutup</button>
-            </div>
-        `;
-        document.body.appendChild(modalDiv);
-        modal = modalDiv;
-    }
+    if (modal) {
+        document.getElementById('barcodeModalTitle').innerText = namaProduk;
+        document.getElementById('barcodeModalNumber').innerText = kodeBarcode;
+        modal.classList.remove('hidden');
 
-    document.getElementById('barcodeModalTitle').innerText = namaProduk;
-    document.getElementById('barcodeModalNumber').innerText = kodeBarcode;
-    modal.classList.remove('hidden');
-
-    try {
-        JsBarcode("#svgBarcodeCanvas", kodeBarcode, {
-            format: "CODE128",
-            lineColor: "#000000",
-            width: 2,
-            height: 70,
-            displayValue: true,
-            fontSize: 14,
-            margin: 5
-        });
-    } catch (e) {
-        console.error("Gagal merender barcode:", e);
         try {
             JsBarcode("#svgBarcodeCanvas", kodeBarcode, {
-                format: "CODE39",
+                format: "CODE128",
                 lineColor: "#000000",
                 width: 2,
                 height: 70,
-                displayValue: true
+                displayValue: true,
+                fontSize: 14,
+                margin: 5
             });
-        } catch (err) {
-            if (typeof showModernAlert === 'function') {
-                showModernAlert("Format barcode tidak valid untuk dirender.", "Error");
+        } catch (e) {
+            console.error("Gagal merender barcode:", e);
+            try {
+                JsBarcode("#svgBarcodeCanvas", kodeBarcode, {
+                    format: "CODE39",
+                    lineColor: "#000000",
+                    width: 2,
+                    height: 70,
+                    displayValue: true
+                });
+            } catch (err) {
+                if (typeof showModernAlert === 'function') {
+                    showModernAlert("Format barcode tidak valid untuk dirender.", "Error");
+                }
+                tutupGlobalBarcodeModal();
             }
-            tutupGlobalBarcodeModal();
         }
     }
 }
@@ -525,5 +99,150 @@ function tutupGlobalBarcodeModal() {
     let modal = document.getElementById('globalBarcodeModal');
     if (modal) {
         modal.classList.add('hidden');
+    }
+}
+
+// =========================================================
+// NAVIGASI & AUTENTIKASI
+// =========================================================
+function pilihMenu(menuType) {
+    let mainMenuCard = document.getElementById('mainMenuCard');
+    let workspaceCard = document.getElementById('workspaceCard');
+
+    if (mainMenuCard) mainMenuCard.classList.add('hidden');
+    if (workspaceCard) workspaceCard.classList.remove('hidden');
+
+    if (menuType === '979') {
+        if (typeof loadMenu979 === 'function') loadMenu979();
+    } else if (menuType === 'bebas') {
+        if (typeof loadMenuRakBebas === 'function') loadMenuRakBebas();
+    } else if (menuType === 'partial') {
+        let soArea = document.getElementById('soFormArea');
+        if (soArea) soArea.classList.remove('hidden');
+        setupWorkspaceHeader("SO Reguler / Partial", "Input manual & pemindaian", true);
+    } else if (menuType === 'admin') {
+        let adminArea = document.getElementById('adminFormArea');
+        if (adminArea) adminArea.classList.remove('hidden');
+        setupWorkspaceHeader("Admin Master Inventory", "Pengaturan database lokal", true);
+    }
+}
+
+function kembaliKeMenu() {
+    let workspaceCard = document.getElementById('workspaceCard');
+    let mainMenuCard = document.getElementById('mainMenuCard');
+    let menu979Container = document.getElementById('menu979Container');
+    let menuBebasContainer = document.getElementById('menuBebasContainer');
+    let soFormArea = document.getElementById('soFormArea');
+    let adminFormArea = document.getElementById('adminFormArea');
+
+    if (workspaceCard) workspaceCard.classList.add('hidden');
+    if (mainMenuCard) mainMenuCard.classList.remove('hidden');
+    if (menu979Container) menu979Container.classList.add('hidden');
+    if (menuBebasContainer) menuBebasContainer.classList.add('hidden');
+    if (soFormArea) soFormArea.classList.add('hidden');
+    if (adminFormArea) adminFormArea.classList.add('hidden');
+}
+
+function setupWorkspaceHeader(title, subtitle, showExtra = true, extraHTML = "") {
+    let titleEl = document.getElementById('workspaceTitleText');
+    let subEl = document.getElementById('workspaceSubtitleText');
+    let slotEl = document.getElementById('extraActionDropdownSlot');
+
+    if (titleEl) titleEl.innerText = title;
+    if (subEl) subEl.innerText = subtitle;
+
+    if (slotEl) {
+        if (showExtra) {
+            slotEl.innerHTML = extraHTML;
+            slotEl.classList.remove('hidden');
+        } else {
+            slotEl.classList.add('hidden');
+        }
+    }
+}
+
+function handleAuthAction() {
+    let savedToken = localStorage.getItem('apo_token');
+    let isSkipped = localStorage.getItem('apo_skipped') === 'true';
+
+    if (savedToken || isSkipped) {
+        logout();
+    } else {
+        // Tampilkan kartu login
+        let loginCard = document.getElementById('loginCard');
+        let mainMenuCard = document.getElementById('mainMenuCard');
+        if (loginCard) loginCard.classList.remove('hidden');
+        if (mainMenuCard) mainMenuCard.classList.add('hidden');
+    }
+}
+
+function lewatiLogin() {
+    localStorage.setItem('apo_skipped', 'true');
+    localStorage.removeItem('apo_token');
+    cekSesiAwal();
+}
+
+function logout() {
+    localStorage.removeItem('apo_token');
+    localStorage.removeItem('apo_skipped');
+    localStorage.removeItem('apo_user_name');
+    localStorage.removeItem('apo_store_name');
+
+    let workspaceCard = document.getElementById('workspaceCard');
+    if (workspaceCard) workspaceCard.classList.add('hidden');
+
+    cekSesiAwal();
+}
+
+function tutupModalLogin() {
+    let sessionModal = document.getElementById('sessionModal');
+    if (sessionModal) sessionModal.classList.add('hidden');
+
+    let loginCard = document.getElementById('loginCard');
+    let mainMenuCard = document.getElementById('mainMenuCard');
+    let workspaceCard = document.getElementById('workspaceCard');
+
+    if (workspaceCard) workspaceCard.classList.add('hidden');
+    if (mainMenuCard) mainMenuCard.classList.add('hidden');
+    if (loginCard) loginCard.classList.remove('hidden');
+}
+
+function tutupModalDanLanjutkan() {
+    let sessionModal = document.getElementById('sessionModal');
+    if (sessionModal) sessionModal.classList.add('hidden');
+
+    localStorage.setItem('apo_skipped', 'true');
+    localStorage.removeItem('apo_token');
+    cekSesiAwal();
+}
+
+// TOGGLE THEME & FULLSCREEN
+function toggleTheme() {
+    let body = document.body;
+    if (body.classList.contains('dark-mode')) {
+        body.classList.remove('dark-mode');
+        body.classList.add('light-mode');
+    } else {
+        body.classList.remove('light-mode');
+        body.classList.add('dark-mode');
+    }
+}
+
+function toggleFullScreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+            console.error("Error attempting to enable fullscreen:", err);
+        });
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
+}
+
+function toggleGlobalDropdownMenu() {
+    let dropdown = document.getElementById('globalSettingsDropdown');
+    if (dropdown) {
+        dropdown.classList.toggle('hidden');
     }
 }
