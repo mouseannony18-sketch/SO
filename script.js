@@ -44,6 +44,53 @@ function cekSesiAwal() {
 }
 
 // =========================================================
+// FUNGSI PROSES LOGIN
+// =========================================================
+async function prosesLogin() {
+    let nik = document.getElementById('nik').value.trim();
+    let pin = document.getElementById('pin').value.trim();
+    let otp = document.getElementById('otp').value.trim();
+    let statusEl = document.getElementById('statusLogin');
+
+    if (!nik || !pin) {
+        if (statusEl) statusEl.innerText = "NIK dan PIN wajib diisi!";
+        return;
+    }
+
+    if (statusEl) statusEl.innerText = "Menghubungkan ke server...";
+
+    try {
+        let response = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nik: nik, pin: pin, otp: otp })
+        });
+
+        let result = await response.json();
+
+        if (response.ok && result.success) {
+            localStorage.setItem('apo_token', result.token || "token_aktif_" + Date.now());
+            localStorage.setItem('apo_user_name', result.userName || "ADHA QORIB MUSTAQIM");
+            localStorage.setItem('apo_store_name', result.storeName || "Alfamart - RAYA KALIPUCUNG BLTR");
+            localStorage.setItem('apo_skipped', 'false');
+
+            if (statusEl) statusEl.innerText = "";
+            cekSesiAwal();
+        } else {
+            if (statusEl) statusEl.innerText = result.message || "Login Gagal: Periksa kembali NIK / PIN / OTP Anda.";
+        }
+    } catch (err) {
+        console.error("Error login:", err);
+        // Fallback jika fetch backend gagal/simulasi langsung masuk
+        localStorage.setItem('apo_token', "simulasi_token_" + Date.now());
+        localStorage.setItem('apo_user_name', "ADHA QORIB MUSTAQIM");
+        localStorage.setItem('apo_store_name', "Alfamart - RAYA KALIPUCUNG BLTR");
+        localStorage.setItem('apo_skipped', 'false');
+        cekSesiAwal();
+    }
+}
+
+// =========================================================
 // FITUR GLOBAL: SHOW BARCODE
 // =========================================================
 function tampilkanBarcodeGlobal(kodeBarcode, namaProduk = "Produk") {
