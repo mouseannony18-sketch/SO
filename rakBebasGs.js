@@ -377,6 +377,7 @@ async function muatDataDariSheetPilihanGs() {
     }
 }
 
+// Fungsi Pembersih & Pendeteksi Cerdas Barcode (Dilengkapi Modulo 10 Check Digit EAN-13)
 function bersihkanFormatBarcode(val) {
     if (!val || val === "-") return "-";
     let str = String(val).trim().replace(/"/g, '');
@@ -384,10 +385,28 @@ function bersihkanFormatBarcode(val) {
     if (str.includes('E+') || str.includes('e+') || str.includes('E-') || str.includes('e-')) {
         let num = Number(str);
         if (!isNaN(num)) {
-            return num.toLocaleString('fullwide', { useGrouping: false });
+            str = num.toLocaleString('fullwide', { useGrouping: false });
         }
     }
-    return str;
+
+    let cleanVal = String(str).trim();
+
+    // Jika panjang barcode tepat 12 digit, asumsikan EAN-13 yang terpotong check digit-nya.
+    // Kita hitung otomatis menggunakan algoritma Modulo 10 EAN-13.
+    if (cleanVal.length === 12 && !isNaN(cleanVal)) {
+        let sum = 0;
+        for (let i = 0; i < 12; i++) {
+            let digit = parseInt(cleanVal[i]);
+            let multiplier = (i % 2 === 0) ? 1 : 3;
+            sum += digit * multiplier;
+        }
+        let mod = sum % 10;
+        let checkDigit = (mod === 0) ? 0 : 10 - mod;
+        return cleanVal + checkDigit;
+    }
+
+    // Jika panjangnya bukan 12 digit (misal 8 digit, 13 digit penuh, atau kode lain), biarkan apa adanya (aman untuk produk seperti Kinder Joy)
+    return cleanVal;
 }
 
 function parseCSVDataGs(text) {
