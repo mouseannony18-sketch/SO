@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SO RAHIL</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Pustaka SheetJS untuk Export Excel -->
+    <script src="xlsx.min.js"></script>
+    <!-- Pustaka JsBarcode untuk Render Barcode Global -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <!-- Pustaka PDF.js untuk Ekstraksi Teks PDF di Browser -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        // Konfigurasi worker PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    </script>
+</head>
+<body class="dark-mode">
+
+    <!-- OVERLAY PERINGATAN IZIN LOKASI (PANDUAN LENGKAP) -->
+<div id="locationBlockedOverlay" class="modal hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.95); z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box;">
+    <div style="width: 100%; max-width: 330px; background: var(--card-bg, #1e293b); color: var(--text-color, #f8fafc); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 16px; padding: 22px 18px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; box-sizing: border-box;">
+        
+        <!-- Ikon Pin GPS -->
+        <div style="font-size: 32px; margin-bottom: 8px;">📍</div>
+        
+        <!-- Judul -->
+        <h3 style="font-size: 15px; margin: 0 0 6px 0; color: #f87171; font-weight: bold;">Izin Lokasi Diperlukan</h3>
+        
+        <!-- Deskripsi -->
+        <p style="font-size: 12px; color: var(--text-muted, #94a3b8); line-height: 1.4; margin: 0 0 12px 0;">
+            Harap izinkan akses lokasi agar dapat masuk ke menu dan mengaktifkan semua fitur SO RAHIL.
+        </p>
+        
+        <!-- Kotak Panduan Cara Mengaktifkan -->
+        <div style="background: rgba(239, 68, 68, 0.08); border-left: 3px solid #ef4444; padding: 10px; border-radius: 6px; font-size: 11px; text-align: left; color: #fca5a5; margin-bottom: 16px; line-height: 1.4;">
+            <b>Cara Mengaktifkan:</b><br>
+            • <b>Cara 1:</b> Ketuk ikon <b>gembok / pengaturan</b> di sebelah kiri kolom URL browser, lalu ubah <b>Lokasi</b> menjadi <b>Izinkan</b>.<br>
+            • <b>Cara 2 (Jika ikon tidak ada):</b> Ketuk titik tiga <b>(⋮)</b> di kanan atas Chrome ➔ <b>Setelan situs</b> ➔ <b>Lokasi</b> ➔ Izinkan situs ini.
+        </div>
+        
+        <!-- Tombol Muat Ulang -->
+        <button onclick="window.location.reload()" style="width: 100%; padding: 11px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(37, 99, 235,.3);">Saya Sudah Mengaktifkannya (Muat Ulang)</button>
+        
+    </div>
+</div>
+
+
+    <!-- HEADER UTAMA GLOBAL (Tampil di Semua Halaman) -->
+    <header class="global-header-bar" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;">
+        
+        <!-- SISI KIRI: Logo & Teks Pengguna (Logo diklik 1x kembali ke menu, klik 5x buka Admin) -->
+        <div style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 4px;">
+            <!-- Baris 1: Logo Alfamart dengan Fungsi Interaktif Rahasia -->
+            <img src="/logo/alfamart.png" alt="Logo Alfamart" onclick="handleLogoClickSecret()" title="Kembali ke Menu (Klik 5x untuk Panel Admin)" style="height: 32px; width: auto; object-fit: contain; margin: 0; display: block; cursor: pointer;" />
+            
+            <!-- Baris 2: Nama User & Toko -->
+            <div id="userNameText" style="font-weight: bold; font-size: 11px; line-height: 1.2; color: var(--text-color);">Karyawan Alfamart</div>
+            <small id="storeNameText" style="color: var(--text-muted); font-size: 10px; line-height: 1.1;">Toko Alfamart</small>
+        </div>
+        
+        <!-- SISI KANAN: Tombol Aksi -->
+        <div class="so-header-actions" style="display: flex; align-items: center; gap: 6px;">
+            <!-- Tombol Layar Penuh (Fullscreen) Global -->
+            <button onclick="toggleFullScreen()" class="header-icon-btn" id="fsToggleBtn" title="Mode Layar Penuh">⛶</button>
+            <!-- Toggle Tema Gelap / Terang Global -->
+            <button onclick="toggleTheme()" class="theme-toggle-btn header-icon-btn" title="Ganti Tema">🌙</button>
+            <!-- Tombol Auth / Login / Logout -->
+            <button onclick="handleAuthAction()" id="authBtn" class="auth-action-btn login-color">Login</button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <!-- KARTU LOGIN -->
+        <div id="loginCard" class="card">
+            <h2>Autentikasi Karyawan</h2>
+            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 15px;">Silakan masukkan NIK dan PIN Anda.</p>
+            <input type="text" id="nik" placeholder="NIK Karyawan" class="input-field">
+            <input type="password" id="pin" placeholder="PIN Keamanan" class="input-field">
+            <input type="text" id="otp" placeholder="Kode OTP / Passcode" class="input-field">
+            <button onclick="prosesLogin()" class="primary-btn">Masuk Sistem</button>
+            <button onclick="lewatiLogin()" class="secondary-btn" style="margin-top: 8px;">Masuk Sebagai Tamu</button>
+            <p id="statusLogin" style="margin-top: 10px; font-size: 12px; color: #ef4444; text-align: center;"></p>
+        </div>
+
+        <!-- MENU UTAMA -->
+        <div id="mainMenuCard" class="card hidden" style="background: transparent; border: none; box-shadow: none; padding: 10px;">
+            <!-- Judul Menggunakan Variabel Teks Otomatis -->
+            <h2 style="font-size: 16px; margin-bottom: 16px; color: var(--text-color); text-align: left;">Pilih Menu Operasional</h2>
+            
+            <!-- Grid Menu ala App Icon -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; justify-items: center;">
+                
+                <!-- Menu 1: Rak 979 -->
+                <div onclick="pilihMenu('979')" style="display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s ease;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+                    <div style="width: 68px; height: 68px; background: #ffffff; border-radius: 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 10px; margin-bottom: 6px;">
+                        <img src="/logo/menu-979.png" alt="Rak 979" style="width: 100%; height: 100%; object-fit: contain;" />
+                    </div>
+                    <span style="font-size: 11px; font-weight: bold; color: var(--text-color); text-align: center; line-height: 1.2;">RAK 979</span>
+                </div>
+
+                <!-- Menu 2: Rak Bebas -->
+                <div onclick="pilihMenu('bebas')" style="display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s ease;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+                    <div style="width: 68px; height: 68px; background: #ffffff; border-radius: 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 10px; margin-bottom: 6px;">
+                        <img src="/logo/menu-bebas.png" alt="Rak Bebas" style="width: 100%; height: 100%; object-fit: contain;" />
+                    </div>
+                    <span style="font-size: 11px; font-weight: bold; color: var(--text-color); text-align: center; line-height: 1.2;">Rak Bebas</span>
+                </div>
+
+                <!-- Menu 3: SO Reguler -->
+                <div onclick="pilihMenu('partial')" style="display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s ease;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+                    <div style="width: 68px; height: 68px; background: #dc2626; border-radius: 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 10px; margin-bottom: 6px;">
+                        <img src="/logo/menu-so-reguler.png" alt="SO Reguler" style="width: 100%; height: 100%; object-fit: contain;" />
+                    </div>
+                    <span style="font-size: 11px; font-weight: bold; color: var(--text-color); text-align: center; line-height: 1.2;">SO Reguler</span>
+                </div>
+
+                <!-- Menu 4: Rak Bebas by GS -->
+                <div onclick="pilihMenuBebasGs()" style="display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s ease;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+                    <div style="width: 68px; height: 68px; background: #2563eb; border-radius: 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 10px; margin-bottom: 6px;">
+                        <img src="/logo/menu-gs.png" alt="Rak Bebas by GS" style="width: 100%; height: 100%; object-fit: contain;" />
+                    </div>
+                    <span style="font-size: 11px; font-weight: bold; color: var(--text-color); text-align: center; line-height: 1.2;">Rak Bebas GS</span>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- AREA WORKSPACE -->
+        <div id="workspaceCard" class="card hidden" style="max-width: 100%; margin: 0; border-radius: 0; min-height: 100vh;">
+            
+            <!-- HEADER WORKSPACE GLOBAL (Dinamis untuk Semua Menu) -->
+            <div id="globalWorkspaceHeader" class="so-header-bar">
+                <div class="so-header-title-wrapper">
+                    <h3 id="workspaceTitleText" class="so-header-title">Workspace</h3>
+                    <span id="workspaceSubtitleText" class="so-header-subtitle">Memuat data...</span>
+                </div>
+                
+                <div class="so-header-actions">
+                    <div class="dropdown-container">
+                        <button onclick="toggleGlobalDropdownMenu()" class="settings-box-btn header-icon-btn" title="Menu Pengaturan">⚙️</button>
+                        <div id="globalSettingsDropdown" class="dropdown-content hidden">
+                            <button onclick="kembaliKeMenu()">🏠 Menu Utama</button>
+                            <div id="extraActionDropdownSlot"></div>
+                            <hr style="border-color: var(--border-color); margin: 4px 0;">
+                            <button onclick="logout()" style="color: #ef4444;">🚪 Logout</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Container Dinamis Modul Lainnya -->
+            <div id="soFormArea" class="hidden"></div>
+            <div id="menu979Container" class="hidden"></div>
+            <div id="menuBebasContainer" class="hidden"></div>
+            <div id="menuBebasGsContainer" class="hidden"></div>
+
+            <!-- Area Form Lama (Cadangan) -->
+            <div id="adminFormArea" class="hidden">
+                <input type="text" id="admBarcode" placeholder="Barcode Barang Baru" class="input-field">
+                <input type="text" id="admNama" placeholder="Nama Barang" class="input-field">
+                <input type="text" id="admKet" placeholder="Keterangan / Rak" class="input-field">
+                <button onclick="simpanItemAdmin()" class="primary-btn">Simpan Barang</button>
+                <button onclick="kembaliKeMenu()" class="back-btn" style="margin-top: 10px;">Kembali</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SESI KADALUWARSA -->
+    <div id="sessionModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Sesi Berakhir / Belum Login</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin: 10px 0 15px 0;">Silakan login kembali untuk melanjutkan sinkronisasi data.</p>
+            <button onclick="tutupModalLogin()" class="primary-btn">Login Sekarang</button>
+            <button onclick="tutupModalDanLanjutkan()" class="secondary-btn" style="margin-top: 8px;">Lanjut Tanpa Login (Tamu)</button>
+        </div>
+    </div>
+
+    <!-- MODAL POPUP GLOBAL: SHOW BARCODE -->
+    <div id="globalBarcodeModal" class="modal hidden">
+        <div class="modal-content" style="text-align: center; max-width: 340px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 id="barcodeModalTitle" style="font-size: 14px; margin: 0;">Barcode Produk</h3>
+                <button onclick="tutupGlobalBarcodeModal()" style="background: none; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer;">&times;</button>
+            </div>
+            <div style="background: #ffffff; padding: 16px; border-radius: 8px; margin: 12px 0; display: flex; justify-content: center; align-items: center; overflow-x: auto;">
+                <svg id="svgBarcodeCanvas"></svg>
+            </div>
+            <p id="barcodeModalNumber" style="font-size: 13px; font-weight: bold; color: var(--text-color); margin-bottom: 16px;">-</p>
+            <button onclick="tutupGlobalBarcodeModal()" class="secondary-btn" style="width: 100%; margin: 0;">Tutup</button>
+        </div>
+    </div>
+
+    <!-- MODAL PANEL ADMIN: LOG REKAP PENGUNJUNG -->
+    <div id="adminLogModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 95vw; width: 900px; max-height: 90vh; display: flex; flex-direction: column; background: var(--card-bg, #1e293b); color: var(--text-color, #f8fafc); border: 1px solid var(--border-color, #334155); border-radius: 12px; padding: 16px;">
+            
+            <!-- Header Modal -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color, #334155); padding-bottom: 10px; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 16px;">📊</span>
+                    <h3 style="font-size: 15px; margin: 0; color: #facc15;">Panel Rekap Log Pengunjung (Admin)</h3>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button onclick="muatLogVisitorAdmin()" style="background: #2563eb; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px; cursor: pointer;">Refresh Log</button>
+                    <button onclick="tutupAdminLogModal()" style="background: #dc2626; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px; cursor: pointer;">Tutup</button>
+                </div>
+            </div>
+
+            <!-- Info Total Log -->
+            <p id="totalLogText" style="font-size: 12px; color: var(--text-muted, #94a3b8); margin: 0 0 10px 0;">Memuat total data...</p>
+
+            <!-- Container Tabel yang Bisa Di-scroll -->
+            <div style="overflow-y: auto; overflow-x: auto; max-height: 65vh; border: 1px solid var(--border-color, #334155); border-radius: 6px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: left;">
+                    <thead>
+                        <tr style="background: #0f172a; color: #38bdf8; position: sticky; top: 0; z-index: 2;">
+                            <th style="padding: 8px; border-bottom: 1px solid #334155;">WAKTU (TIMESTAMP)</th>
+                            <th style="padding: 8px; border-bottom: 1px solid #334155;">NIK/ID</th>
+                            <th style="padding: 8px; border-bottom: 1px solid #334155;">NAMA</th>
+                            <th style="padding: 8px; border-bottom: 1px solid #334155;">TOKO</th>
+                            <th style="padding: 8px; border-bottom: 1px solid #334155;">PERANGKAT</th>
+                            <th style="padding: 8px; border-bottom: 1px solid #334155;">KOORDINAT GPS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelLogBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 20px; color: var(--text-muted);">Memuat data dari server...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL INPUT PIN ADMIN -->
+    <div id="pinAdminModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 320px; text-align: center; background: var(--card-bg, #1e293b); color: var(--text-color);">
+            <h3 style="font-size: 15px; margin-bottom: 8px; color: #facc15;">Autentikasi Admin</h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Masukkan PIN Admin untuk membuka panel log.</p>
+            <input type="password" id="inputPinAdmin" placeholder="PIN Rahasia Admin" class="input-field" style="text-align: center; letter-spacing: 3px; margin-bottom: 12px;">
+            <div style="display: flex; gap: 8px;">
+                <button onclick="verifikasiPinAdmin()" class="primary-btn" style="flex: 1; padding: 8px;">Masuk</button>
+                <button onclick="tutupPinAdminModal()" class="secondary-btn" style="flex: 1; padding: 8px; margin: 0;">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Aplikasi -->
+    <script src="auth.js"></script>
+    <script src="script.js"></script>
+    <script src="export.js"></script>
+    <script src="menu979.js"></script>
+    <script src="rakBebas.js"></script>
+    <script src="rakBebasGs.js"></script>
+    <script src="soReguler.js"></script>
+</body>
+</html>
